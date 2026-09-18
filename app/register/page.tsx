@@ -1,4 +1,4 @@
-import TextField from "./TextField";
+import TextField from "../components/TextField";
 
 export default function Register() {
     return(
