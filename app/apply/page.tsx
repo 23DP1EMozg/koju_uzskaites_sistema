@@ -1,14 +1,16 @@
 "use client";
 
 import { useState } from "react";
-import { Application } from "../types/Application";
+import { Application } from "./Application";
 import { apply } from "./actions";
 
 export default function Apply() {
     const [data, setData] = useState<Application>({
+        id: null,
         name: "",
         social_security_number: "",
-        course: ""
+        email: "",
+        phone_number: ""
     })
 
     return(
@@ -25,10 +27,16 @@ export default function Apply() {
                     social_security_number: e.target.value
                 }))
             }}/>
-            <input type="text" placeholder="course" value={data.course} onChange={(e) => {
+            <input type="text" placeholder="email" value={data.email} onChange={(e) => {
                 setData(prev => ({
                     ...prev,
-                    course: e.target.value
+                    email: e.target.value
+                }))
+            }}/>
+            <input type="text" placeholder="phone number" value={data.phone_number} onChange={(e) => {
+                setData(prev => ({
+                    ...prev,
+                    phone_number: e.target.value
                 }))
             }}/>
             <button onClick={() => apply(data)}>Submit</button>

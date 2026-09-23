@@ -7,9 +7,10 @@ export type User = {
     role?: string,
     course?: string,
     room_number?: number,
-    last_laundry_date?: Date,
-    next_kitchen_cleaning_date?: Date,
+    last_laundry_date?: Date | null,
+    next_kitchen_cleaning_date?: Date | null,
     weekend_stay_count?: number,
     social_security_number?: string,
-    name?: string
+    name?: string,
+    phone_number?: string
 }
