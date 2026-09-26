@@ -11,7 +11,7 @@ type DashboardSectionProps = {
 
 export default function DashboardSection({floor, studentSurname, studentName, accentColor}: DashboardSectionProps) {
     return (
-        <section className={"w-full flex justify-center items-start h-[100vh]"}>
+        <section id={"DashboardSection"} className={`w-full flex justify-center items-start h-[100vh] bg-[url('/backgrounds/RedHomeScreenBg.png')] bg-cover bg-center bg-no-repeat`}>
         <NavBar accentColor={accentColor}/>
         </section>
     )
