@@ -61,3 +61,48 @@ export const rejectApplication = async (id: number) => {
         throw error
     }
 }
+
+export const getAllTenants = async () => {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+    .from("users")
+    .select("id, room_number, name ")
+    .not("course", "is", null)
+
+    if (error) {
+        throw error
+    }
+
+    return data
+}
+
+export const deleteTenant = async (id: number) => {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+    .from("users")
+    .delete()
+    .eq("id", id)
+
+    if (error) {
+        throw error
+    }
+}
+
+export const getTenantById = async (id: number) : Promise<User> => {
+    const supabase = await createClient()
+
+    const { error, data } = await supabase
+    .from("users")
+    .select("name, social_security_number, room_number, course, email, phone_number")
+    .eq("id", id)
+    .single()
+
+
+    if (error) {
+        throw error
+    }
+
+    return data
+}
