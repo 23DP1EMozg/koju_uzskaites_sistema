@@ -3,6 +3,8 @@ import { Application } from "../apply/Application"
 import { createClient } from "../lib/supabase/server"
 import { Role } from "../types/Role"
 import { User } from "../types/User"
+import { hashPassword } from '../helper/password'
+import { sendEmail } from "../helper/mailer"
 
 export const getUserApplications = async () : Promise<Application[]> => {
 
@@ -25,18 +27,13 @@ export const acceptAndEditApplication = async (u: User) => {
 
     const supabase = await createClient()
 
-    console.log({
-    id: u.id,
-    role: Role.USER,
-    password: Math.floor(100000 + Math.random() * 900000),
-});
-
+    const generatedPassword = Math.floor(100000 + Math.random() * 900000).toString()
 
     const { error } = await supabase
     .from("users")
     .update({
         ...u,
-        password: Math.floor(100000 + Math.random() * 900000).toString(),
+        password: hashPassword(generatedPassword),
         role: JSON.stringify(Role.USER),
         last_laundry_date: null,
         next_kitchen_cleaning_date: null,
@@ -46,6 +43,23 @@ export const acceptAndEditApplication = async (u: User) => {
 
     if (error) {
         throw error
+    }
+
+    const result = await sendEmail({
+        to: u.email as string,
+        subject: "Pieņemšana dienesta viesnīcā",
+        message: `
+        Sveiki!
+
+        jūs esat pieņemts RVT kojās. jūsu piekļuves dati ir:
+        
+        ē-pasts: ${u.email}
+        pagaidu parole: ${generatedPassword}
+        `
+    })
+
+    if (!result.success) {
+        console.error(result.error)
     }
 }
 

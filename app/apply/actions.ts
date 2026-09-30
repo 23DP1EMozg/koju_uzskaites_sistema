@@ -44,10 +44,13 @@ export const apply = async (inputData?: Application) => {
 export const saveApplication =  async (
     supabase: SupabaseClient, application: Application
 ) => {
+
+    const { id, ...userData } = application;
+
     const {data, error} = await supabase
     .from("users")
     .insert([
-        application        
+        userData        
     ])
     
     if (error) {

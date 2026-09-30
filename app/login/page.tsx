@@ -1,3 +1,6 @@
+"use client"
+
+import { sendEmail } from "../helper/mailer";
 import TextField from "../register/TextField";
 
 
