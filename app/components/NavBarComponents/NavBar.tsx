@@ -6,7 +6,7 @@ import {useState} from "react";
 type NavBarProps = {
     accentColor: string;
 };
-
+//TODO: make accent color for nav bar buttons depend on user position on website
 export default function NavBar({accentColor}: NavBarProps) {
     const [activeItem, setActiveItem] = useState("Profils")
     const items = ['Profils', 'Sudzības', 'Informācija', 'Pasākumi']
