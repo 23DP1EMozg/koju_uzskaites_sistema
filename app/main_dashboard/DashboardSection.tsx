@@ -1,6 +1,7 @@
 import NavBar from "@/app/components/NavBarComponents/NavBar";
 import DashboardAccentColorWidget from "@/app/components/dashboardComponents/DashboardAccentColorWidge";
-
+import DashboardAccentBtn from "@/app/components/dashboardComponents/DashboardAccentBtn";
+import DashboardStrokeButton from "@/app/components/dashboardComponents/DashboardStrokeButton";
 
 type DashboardSectionProps = {
     studentFloor: number
@@ -19,6 +20,10 @@ export default function DashboardSection({studentCourse,studentRoom,studentFloor
             <div className="flex flex-col items-start justify-start w-1/2 gap-4">
                 <h1 className={`text-white font-semibold text-8xl `}>{studentName} {studentSurname}</h1>
                 <p className={`text-white font-medium text-4xl`}>{studentCourse}</p>
+                <div className={`flex items-center justify-start w-1/2 gap-4 h-[4vh]`}>
+                    <DashboardStrokeButton/>
+                    <DashboardAccentBtn/>
+                </div>
                 <h1 style={{color: accentColor}} className={`font-semibold text-8xl `}>{studentRoom}</h1>
                 <div className={`flex sm:flex-row items-start justify-between w-1/2`}>
                     <DashboardAccentColorWidget accentColor={accentColor} date={'30/09/2026'} text={"Nakama virtuves tirisana"}/>
