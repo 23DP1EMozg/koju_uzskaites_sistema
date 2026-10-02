@@ -1,7 +1,7 @@
 
 type Props = {
     label: string,
-    placeholder: string
+    placeholder: string,
 }
 
 export default function TextField(props: Props){
