@@ -3,7 +3,7 @@ import { Application } from "../apply/Application"
 import { createClient } from "../lib/supabase/server"
 import { Role } from "../types/Role"
 import { User } from "../types/User"
-import { hashPassword } from '../helper/password'
+import { hashPassword } from '../helper/auth/password'
 import { sendEmail } from "../helper/mailer"
 
 export const getUserApplications = async () : Promise<Application[]> => {
