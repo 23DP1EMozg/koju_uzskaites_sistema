@@ -14,25 +14,26 @@ type DashboardSectionProps = {
 
 export default function DashboardSection({studentCourse,studentRoom,studentFloor, studentSurname, studentName, accentColor}: DashboardSectionProps) {
     return (
-        <section id={"DashboardSection"} className={`w-full flex flex-col justify-start items-center gap-[30%] h-screen bg-[url('/backgrounds/RedHomeScreenBg.png')] bg-cover bg-center bg-no-repeat`}>
+        <section id={"DashboardSection"} className={`w-full flex flex-col justify-start items-center h-screen bg-[url('/backgrounds/RedHomeScreenBg.png')] bg-cover bg-center bg-no-repeat`}>
         <NavBar accentColor={accentColor}/>
-        <div className={`flex justify-around items-center w-[90%]`}>
-            <div className="flex flex-col items-start justify-start w-1/2 gap-4">
-                <h1 className={`text-white font-semibold text-8xl `}>{studentName} {studentSurname}</h1>
-                <p className={`text-white font-medium text-4xl`}>{studentCourse}</p>
-                <div className={`flex items-center justify-start w-1/2 gap-4 h-[4vh]`}>
+        <div className={`flex justify-between items-end w-[95%] mt-auto mb-[10vh]`}>
+            <div className="flex flex-col items-start justify-start w-[55%] gap-7">
+                <div className="flex flex-col gap-3">
+                    <h1 className={`text-white font-semibold text-7xl leading-none`}>{studentName} {studentSurname}</h1>
+                    <p className={`text-white font-medium text-4xl leading-none`}>{studentCourse}</p>
+                </div>
+                <div className={`flex items-center justify-start gap-5 h-13`}>
                     <DashboardStrokeButton/>
                     <DashboardAccentBtn/>
                 </div>
-                <h1 style={{color: accentColor}} className={`font-semibold text-8xl `}>{studentRoom}</h1>
-                <div className={`flex sm:flex-row items-start justify-between w-1/2`}>
+                <h1 style={{color: accentColor}} className={`font-black italic text-[110px] leading-[0.8]`}>{String(studentRoom).padStart(3, '0')}</h1>
+                <div className={`flex flex-row items-start justify-between gap-12 w-full`}>
                     <DashboardAccentColorWidget accentColor={accentColor} date={'30/09/2026'} text={"Nakama virtuves tirisana"}/>
                     <DashboardAccentColorWidget accentColor={accentColor} date={'30/09/2026'} text={"Nakama velas maina"}/>
                 </div>
             </div>
-            <div className="flex flex-col items-end justify-start w-1/2">
-                <h1 className={`text-white font-semibold text-8xl `}>{studentName} {studentSurname}</h1>
-                <p className={`text-white font-medium text-4xl`}>{studentCourse}</p>
+            {/* TODO: right column widgets (Nakama tiribu parbude, Tuvakais pasakums, Zinojumi) */}
+            <div className="flex flex-col items-end justify-start w-[40%]">
             </div>
         </div>
 
