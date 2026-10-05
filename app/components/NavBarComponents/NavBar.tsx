@@ -12,7 +12,7 @@ export default function NavBar({accentColor}: NavBarProps) {
     const items = ['Profils', 'Sudzības', 'Informācija', 'Pasākumi']
     return (
         <nav className={"w-[95%] flex justify-between items-center h-17 mt-5"}>
-            <NavBarCornerButton iconRoute="/icons/ProfileIcon.png" accentColor={accentColor}/>
+            <NavBarCornerButton iconRoute="/icons/log-outIcon.svg" accentColor={accentColor}/>
             <ul className={"grid grid-cols-4 items-center w-[53%] bg-white rounded-full p-2.5 h-full"}>
                 {items.map((item) => (
                     <li key={item} className={"flex justify-center h-full"}>
@@ -30,7 +30,7 @@ export default function NavBar({accentColor}: NavBarProps) {
                     </li>
                 ))}
             </ul>
-            <NavBarCornerButton iconRoute="/icons/ProfileIcon.png" accentColor={accentColor}/>
+            <NavBarCornerButton iconRoute="/icons/notificationIcon.svg" accentColor={accentColor}/>
         </nav>
     )
 }

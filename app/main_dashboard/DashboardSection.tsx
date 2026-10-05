@@ -2,6 +2,8 @@ import NavBar from "@/app/components/NavBarComponents/NavBar";
 import DashboardAccentColorWidget from "@/app/components/dashboardComponents/DashboardAccentColorWidge";
 import DashboardAccentBtn from "@/app/components/dashboardComponents/DashboardAccentBtn";
 import DashboardStrokeButton from "@/app/components/dashboardComponents/DashboardStrokeButton";
+import DashboardEventWidget from "@/app/components/dashboardComponents/DashboardEventWidget";
+import DashboardMessagesWidget from "@/app/components/dashboardComponents/DashboardMessagesWidget";
 
 type DashboardSectionProps = {
     studentFloor: number
@@ -32,8 +34,12 @@ export default function DashboardSection({studentCourse,studentRoom,studentFloor
                     <DashboardAccentColorWidget accentColor={accentColor} date={'30/09/2026'} text={"Nakama velas maina"}/>
                 </div>
             </div>
-            {/* TODO: right column widgets (Nakama tiribu parbude, Tuvakais pasakums, Zinojumi) */}
-            <div className="flex flex-col items-end justify-start w-[40%]">
+            <div className="flex flex-col items-end justify-start w-[40%] gap-11">
+                <div className={`flex flex-row gap-10 w-full`}>
+                    <DashboardEventWidget title={"Nakama tiribu parbude"} highlight={"Sestdiena"} date={'11/09/2026'} bgImage={"/backgrounds/RedGradientWidgetBg.png"}/>
+                    <DashboardEventWidget title={"Tuvakais pasakums"} highlight={"Basketbols"} date={'11/09/2026'}/>
+                </div>
+                <DashboardMessagesWidget accentColor={accentColor} message={"Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. and a search for 'lorem ipsum' will uncover many web sites still in their infancy. and a search for 'lorem ipsum' will uncover many web sites still in their infancy."}/>
             </div>
         </div>
 
