@@ -24,11 +24,13 @@ export default function EventCard ({heading, event, bgImage, slideCount, activeS
                 <h2 className={`text-[50px] font-bold italic leading-none pt-2`}>{heading}</h2>
                 <BulletBtn color={"#FFFFFF"} size={"size-14"}/>
             </div>
-            <div className={`flex flex-row items-baseline justify-between w-full mt-9`}>
-                <p className={`text-4xl leading-none`}>{event.title}</p>
-                <p className={`text-[22px] font-medium leading-none`}>{event.date}</p>
+            <div key={activeSlide} className={`flex flex-col w-full animate-slide-reveal motion-reduce:animate-none`}>
+                <div className={`flex flex-row items-baseline justify-between w-full mt-9`}>
+                    <p className={`text-4xl leading-none`}>{event.title}</p>
+                    <p className={`text-[22px] font-medium leading-none`}>{event.date}</p>
+                </div>
+                <p className={`max-w-[70%] text-[22px] leading-tight mt-9 line-clamp-5`}>{event.description}</p>
             </div>
-            <p className={`max-w-[70%] text-[22px] leading-tight mt-9 line-clamp-5`}>{event.description}</p>
             <button className={`bg-white text-black rounded-[20px] w-68 h-16 text-[22px] mt-8 cursor-pointer`}>
                 Pieteikties
             </button>
