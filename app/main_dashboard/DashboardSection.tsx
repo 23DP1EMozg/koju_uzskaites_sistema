@@ -12,13 +12,15 @@ type DashboardSectionProps = {
     studentSurname: string
     studentCourse: string
     accentColor: string
+    bgImage: string
+    widgetBg: string
 };
 
-export default function DashboardSection({studentCourse,studentRoom,studentFloor, studentSurname, studentName, accentColor}: DashboardSectionProps) {
+export default function DashboardSection({studentCourse,studentRoom,studentFloor, studentSurname, studentName, accentColor, bgImage, widgetBg}: DashboardSectionProps) {
     return (
-        <section id={"DashboardSection"} className={`w-full flex flex-col justify-start items-center h-screen bg-[url('/backgrounds/RedHomeScreenBg.png')] bg-cover bg-center bg-no-repeat`}>
+        <section id={"DashboardSection"} style={{backgroundImage: `url('${bgImage}')`}} className={`sticky top-0 w-full flex flex-col justify-start items-center h-screen bg-cover bg-center bg-no-repeat`}>
         <NavBar accentColor={accentColor}/>
-        <div className={`flex justify-between items-end w-[95%] mt-auto mb-[10vh]`}>
+        <div className={`flex justify-between items-end w-[95%] mt-auto mb-[16vh]`}>
             <div className="flex flex-col items-start justify-start w-[55%] gap-7">
                 <div className="flex flex-col gap-3">
                     <h1 className={`text-white font-semibold text-7xl leading-none`}>{studentName} {studentSurname}</h1>
@@ -36,7 +38,7 @@ export default function DashboardSection({studentCourse,studentRoom,studentFloor
             </div>
             <div className="flex flex-col items-end justify-start w-[40%] gap-11">
                 <div className={`flex flex-row gap-10 w-full`}>
-                    <DashboardEventWidget title={"Nakama tiribu parbude"} highlight={"Sestdiena"} date={'11/09/2026'} bgImage={"/backgrounds/RedGradientWidgetBg.png"}/>
+                    <DashboardEventWidget title={"Nakama tiribu parbude"} highlight={"Sestdiena"} date={'11/09/2026'} bgImage={widgetBg}/>
                     <DashboardEventWidget title={"Tuvakais pasakums"} highlight={"Basketbols"} date={'11/09/2026'}/>
                 </div>
                 <DashboardMessagesWidget accentColor={accentColor} message={"Many desktop publishing packages and web page editors now use Lorem Ipsum as their default model text, and a search for 'lorem ipsum' will uncover many web sites still in their infancy. and a search for 'lorem ipsum' will uncover many web sites still in their infancy. and a search for 'lorem ipsum' will uncover many web sites still in their infancy."}/>

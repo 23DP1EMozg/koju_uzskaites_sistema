@@ -1,1 +1,10 @@
 @import "tailwindcss";
+
+@theme {
+    --animate-slide-progress: slide-progress linear forwards;
+
+    @keyframes slide-progress {
+        from { transform: scaleX(0); }
+        to { transform: scaleX(1); }
+    }
+}

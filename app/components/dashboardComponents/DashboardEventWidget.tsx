@@ -5,7 +5,7 @@ type DashboardEventWidgetProps = {
     date: string
     bgImage?: string
 }
-// renders as gradient widget when bgImage is passed, plain white widget otherwise
+
 export default function DashboardEventWidget ({title, highlight, date, bgImage}: DashboardEventWidgetProps) {
     return (
         <div style={bgImage ? {backgroundImage: `url('${bgImage}')`} : undefined} className="flex-1 flex flex-col justify-between rounded-[28px] h-61 bg-white bg-cover bg-center pt-3.5 pl-5 pr-4 pb-6">
