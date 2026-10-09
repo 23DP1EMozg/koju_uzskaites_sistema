@@ -1,6 +1,10 @@
 "use server";
 
+import { signUser } from "../helper/auth/jwt";
+import { verifyPassword } from "../helper/auth/password";
 import { createClient } from "../lib/supabase/server";
+import jwt from 'jsonwebtoken'
+
 
 type Props = {
     email: string,
@@ -13,7 +17,8 @@ export const loginUser = async ({email, password} : Props) => {
 
     const { data, error } = await supabase
     .from("users")
-    .select("password")
+    .select("password, email, id, name, role")
+    .eq("email", email)
     .single()
 
     if (!data) {
@@ -25,11 +30,22 @@ export const loginUser = async ({email, password} : Props) => {
         return
     }
 
-    if (data.password !== password) {
+
+    const isPasswordMatch = await verifyPassword(password, data.password)
+    if (!isPasswordMatch) {
         throw new Error("incorect password")
     }
     
+    const token = signUser(
+        {
+            id: data.id,
+            name: data.name,
+            email: data.email,
+            role: data.role
+        }
+    )
 
+    return token
 
 }
 
