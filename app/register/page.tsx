@@ -1,4 +1,4 @@
-import TextField from "./TextField";
+import TextField from "../components/TextField";
 import { createClient } from "../lib/supabase/server";
 import bcrypt from "bcryptjs";
 
@@ -40,7 +40,7 @@ export default async function Register() {
                     <button className="bg-pink-900 text-white w-[70%] max-w-100 py-5 rounded-xl">Register</button>
                 </div>
                 <Users/>
-            </form>            
+            </form>
         </main>
     )
 }

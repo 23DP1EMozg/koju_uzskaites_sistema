@@ -1,7 +1,7 @@
 "use client"
 
 import { sendEmail } from "../helper/mailer";
-import TextField from "../register/TextField";
+import TextField from "../components/TextField";
 
 
 export default function Login() {

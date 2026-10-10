@@ -12,6 +12,21 @@
   --font-mono: var(--font-geist-mono);
 }
 
+@theme {
+    --animate-slide-progress: slide-progress linear forwards;
+    --animate-slide-reveal: slide-reveal 500ms ease-out;
+
+    @keyframes slide-progress {
+        from { transform: scaleX(0); }
+        to { transform: scaleX(1); }
+    }
+
+    @keyframes slide-reveal {
+        from { opacity: 0; transform: translateY(12px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
