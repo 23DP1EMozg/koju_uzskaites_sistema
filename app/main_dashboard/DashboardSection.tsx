@@ -1,4 +1,3 @@
-import NavBar from "@/app/components/NavBarComponents/NavBar";
 import DashboardAccentColorWidget from "@/app/components/dashboardComponents/DashboardAccentColorWidge";
 import DashboardAccentBtn from "@/app/components/dashboardComponents/DashboardAccentBtn";
 import DashboardStrokeButton from "@/app/components/dashboardComponents/DashboardStrokeButton";
@@ -19,7 +18,6 @@ type DashboardSectionProps = {
 export default function DashboardSection({studentCourse,studentRoom,studentFloor, studentSurname, studentName, accentColor, bgImage, widgetBg}: DashboardSectionProps) {
     return (
         <section id={"DashboardSection"} style={{backgroundImage: `url('${bgImage}')`}} className={`sticky top-0 w-full flex flex-col justify-start items-center h-screen bg-cover bg-center bg-no-repeat`}>
-        <NavBar accentColor={accentColor}/>
         <div className={`flex justify-between items-end w-[95%] mt-auto mb-[16vh]`}>
             <div className="flex flex-col items-start justify-start w-[55%] gap-7">
                 <div className="flex flex-col gap-3">
