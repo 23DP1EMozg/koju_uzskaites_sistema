@@ -28,12 +28,14 @@ export const acceptAndEditApplication = async (u: User) => {
     const supabase = await createClient()
 
     const generatedPassword = Math.floor(100000 + Math.random() * 900000).toString()
+    const hashedPassword = await hashPassword(generatedPassword.toString())
+
 
     const { error } = await supabase
     .from("users")
     .update({
         ...u,
-        password: hashPassword(generatedPassword),
+        password: hashedPassword,
         role: JSON.stringify(Role.USER),
         last_laundry_date: null,
         next_kitchen_cleaning_date: null,
