@@ -1,9 +1,10 @@
 "use server";
 
-import { signUser } from "../helper/auth/jwt";
+import { addTokenToCookie, getCurrentUser, signUser } from "../helper/auth/jwt";
 import { verifyPassword } from "../helper/auth/password";
 import { createClient } from "../lib/supabase/server";
 import jwt from 'jsonwebtoken'
+import { User } from "../types/User";
 
 
 type Props = {
@@ -48,5 +49,21 @@ export const loginUser = async ({email, password} : Props) => {
     return token
 
 }
+
+
+    export const signInUser = async (email:string, password:string) => {
+        try {
+            const token = await loginUser({
+                email: email,
+                password: password
+            })
+            console.log(token)
+            await addTokenToCookie(token as string)
+            const user = await getCurrentUser() as User
+            return user
+        } catch (error) {
+            throw error
+        }
+    }
 
 

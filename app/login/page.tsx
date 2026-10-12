@@ -1,9 +1,10 @@
 "use client"
 
 import { useState } from "react";
-import { sendEmail } from "../helper/mailer";
 import TextField from "../register/TextField";
-import { loginUser } from "./actions";
+import { signInUser } from "./actions";
+import { User } from "../types/User";
+import { useRouter } from "next/navigation";
 
 type InputData = {
     email: string,
@@ -17,13 +18,15 @@ export default function Login() {
         password: ""
     })
 
+    const [loggedUser, setLoggedUser] = useState<User>()
+
+    const router = useRouter()
+
     const login = async () => {
         try {
-            const token = await loginUser({
-                email: data.email,
-                password: data.password
-            })
-            console.log(token)
+            const user = await signInUser(data.email, data.password)
+            setLoggedUser(user)
+            router.push("/")
         } catch (error) {
             console.log(error)
         }
