@@ -1,5 +1,6 @@
 
 
+import { User } from '@/app/types/User'
 import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 
@@ -39,16 +40,16 @@ export const addTokenToCookie = async (token: string) => {
     })
 }
 
-export const getCurrentUser = async () => {
+export const getCurrentUser = async () : Promise<User | null> => {
     const cookieStore = await cookies()
     const token = cookieStore.get("auth_token")?.value
 
     if (!token) return null
 
     try { 
-        const user = decodeUserJwt(token)
+        const user = decodeUserJwt(token) as unknown as User
         return user
     } catch (error) {
-        throw null
+        return null
     }
 }
