@@ -5,16 +5,18 @@ import Image from "next/image"
 import { Inter } from "next/font/google"
 import Modal from "react-modal"
 import { Application } from "../apply/Application"
-import { acceptAndEditApplication, deleteTenant, getAllComplaints, getAllTenants, getTenantById, getUserApplications, rejectApplication } from "./actions"
+import { acceptAndEditApplication, deleteTenant, getAllComplaints, getAllTenants, getOverdueCleaningTenants, getTenantById, getUserApplications, rejectApplication } from "./actions"
 import { User } from "../types/User"
 import ApplicationCard from "./ApplicationCard"
 import TenantCard from "./TenantCard"
+import OverdueTenantCard from "./OverdueTenantCard"
 import AdminNav, { NavItem } from "./AdminNav"
 import StatCard from "./StatCard"
 import AdminModal from "./AdminModal"
 import ConfirmDialog from "./ConfirmDialog"
 import InputField from "../components/InputField"
 import { Complaint } from "../types/Complaint"
+import { OverdueTenant } from "../types/OverdueTenant"
 
 const inter = Inter({
     subsets: ["latin", "latin-ext"],
@@ -24,6 +26,7 @@ const inter = Inter({
 const NAV_ITEMS: NavItem[] = [
     { id: "pieteikumi", label: "Pieteikumi" },
     { id: "iemitnieki", label: "Iemītnieki" },
+    { id: "kavetaji", label: "Kavētāji" },
     { id: "sudzibas", label: "Sūdzības" },
     { id: "informacija", label: "Informācija" },
     { id: "pasakumi", label: "Pasākumi" },
@@ -59,6 +62,7 @@ export default function AdminDashboard() {
     const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null)
     const [isConfirming, setIsConfirming] = useState(false)
     const [complaints, setComplaints] = useState<Complaint[]>()
+    const [overdueTenants, setOverdueTenants] = useState<OverdueTenant[]>([])
 
     const getApplications = async () => {
         try {
@@ -81,6 +85,7 @@ export default function AdminDashboard() {
     useEffect(() => {
         getUserApplications().then(setApplications).catch(console.error)
         getAllTenants().then(setTenants).catch(console.error)
+        getOverdueCleaningTenants().then(setOverdueTenants).catch(console.error)
         getComplaints()
         Modal.setAppElement("body")
     }, [])
@@ -313,6 +318,32 @@ export default function AdminDashboard() {
                             />
                         ))
                     )}
+                </div>
+            </section>
+
+            {/* Overdue cleaning — tenants who skipped laundry or kitchen cleaning for over 3 weeks */}
+            <section id="kavetaji" className="scroll-mt-4 px-4 pb-16 lg:px-[7.5rem] lg:pb-28">
+                <div className="rounded-[3rem] bg-[url('/backgrounds/redTheme/NotificationContainerRedBg.png')] bg-cover bg-center px-3 py-14 text-white lg:px-16 lg:py-20">
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                        <h2 className="text-5xl font-extrabold italic tracking-tight lg:text-[5.5rem] lg:leading-none">Kavētāji</h2>
+                        <p className="max-w-[26rem] text-lg text-white/75 lg:mb-[-1.5rem] lg:text-2xl">
+                            Iemītnieki, kas vairāk nekā 3 nedēļas nav tīrījuši veļas telpu vai virtuvi
+                        </p>
+                    </div>
+
+                    <div className="mt-10 flex flex-col gap-5 lg:mt-14">
+                        {overdueTenants.length === 0 ? (
+                            <p className="text-lg text-white/75">Visi pienākumi ir izpildīti laikā.</p>
+                        ) : (
+                            overdueTenants.map(t => (
+                                <OverdueTenantCard
+                                    tenant={t}
+                                    key={t.id}
+                                    onView={() => handleViewTenant(t.id)}
+                                />
+                            ))
+                        )}
+                    </div>
                 </div>
             </section>
 

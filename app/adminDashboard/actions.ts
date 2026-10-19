@@ -6,6 +6,7 @@ import { User } from "../types/User"
 import { hashPassword } from '../helper/auth/password'
 import { sendEmail } from "../helper/mailer"
 import { Complaint } from "../types/Complaint"
+import { OverdueTenant } from "../types/OverdueTenant"
 
 export const getUserApplications = async () : Promise<Application[]> => {
 
@@ -134,4 +135,13 @@ export const getAllComplaints = async () : Promise<Complaint[]> => {
     if (error) throw error
 
     return data
+}
+
+// TODO(BE): replace mock with a users query where last_laundry_date or last_kitchen_cleaning_date is older than 21 days
+export const getOverdueCleaningTenants = async () : Promise<OverdueTenant[]> => {
+    return [
+        { id: 1, name: "Liene Ozola", room_number: 101, last_laundry_date: "2026-09-14", last_kitchen_cleaning_date: null },
+        { id: 2, name: "Anna Kalniņa", room_number: 312, last_laundry_date: "2026-09-02", last_kitchen_cleaning_date: "2026-08-28" },
+        { id: 3, name: "Edvards Mozga", room_number: 413, last_laundry_date: null, last_kitchen_cleaning_date: "2026-09-20" },
+    ]
 }
