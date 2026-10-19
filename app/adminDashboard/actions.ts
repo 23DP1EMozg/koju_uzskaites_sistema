@@ -6,6 +6,7 @@ import { User } from "../types/User"
 import { hashPassword } from '../helper/auth/password'
 import { sendEmail } from "../helper/mailer"
 import { requireAdmin } from "../helper/auth/jwt"
+import { Complaint } from "../types/Complaint"
 
 export const getUserApplications = async () : Promise<Application[]> => {
     await requireAdmin()
@@ -128,6 +129,19 @@ export const getTenantById = async (id: number) : Promise<User> => {
     if (error) {
         throw error
     }
+
+    return data
+}
+
+export const getAllComplaints = async () : Promise<Complaint[]> => {
+    await requireAdmin()
+    const supabase = await createClient()
+
+    const { error, data } = await supabase
+    .from("complaints")
+    .select("id, description, created_at")
+
+    if (error) throw error
 
     return data
 }

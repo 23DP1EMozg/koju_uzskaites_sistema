@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Inter } from "next/font/google"
 import Modal from "react-modal"
 import { Application } from "../apply/Application"
-import { acceptAndEditApplication, deleteTenant, getAllTenants, getTenantById, getUserApplications, rejectApplication } from "./actions"
+import { acceptAndEditApplication, deleteTenant, getAllComplaints, getAllTenants, getTenantById, getUserApplications, rejectApplication } from "./actions"
 import { User } from "../types/User"
 import ApplicationCard from "./ApplicationCard"
 import TenantCard from "./TenantCard"
@@ -14,6 +14,7 @@ import StatCard from "./StatCard"
 import AdminModal from "./AdminModal"
 import ConfirmDialog from "./ConfirmDialog"
 import InputField from "../components/InputField"
+import { Complaint } from "../types/Complaint"
 
 const inter = Inter({
     subsets: ["latin", "latin-ext"],
@@ -57,6 +58,7 @@ export default function AdminDashboard() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null)
     const [isConfirming, setIsConfirming] = useState(false)
+    const [complaints, setComplaints] = useState<Complaint[]>()
 
     const getApplications = async () => {
         try {
@@ -79,6 +81,7 @@ export default function AdminDashboard() {
     useEffect(() => {
         getUserApplications().then(setApplications).catch(console.error)
         getAllTenants().then(setTenants).catch(console.error)
+        getComplaints()
         Modal.setAppElement("body")
     }, [])
 
@@ -203,6 +206,17 @@ export default function AdminDashboard() {
             String(t.room_number ?? "").includes(search) ||
             t.course?.toLowerCase().includes(search))
         : tenants
+
+
+    const getComplaints = async () => {
+        try {
+            const comp = await getAllComplaints()
+            setComplaints(comp)
+            console.log(comp)
+        } catch (error) {
+            console.error(error)
+        }
+    }
 
     return (
         <div className={`${inter.className} min-h-dvh bg-white`}>
