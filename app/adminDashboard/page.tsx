@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Inter } from "next/font/google"
 import Modal from "react-modal"
 import { Application } from "../apply/Application"
-import { acceptAndEditApplication, deleteTenant, getAllComplaints, getAllTenants, getOverdueCleaningTenants, getTenantById, getUserApplications, rejectApplication } from "./actions"
+import { acceptAndEditApplication, deleteTenant, getAllComplaints, getAllTenants, getOverdueCleaningTenants, getTenantById, notifyOverdueTenant, getUserApplications, rejectApplication } from "./actions"
 import { User } from "../types/User"
 import ApplicationCard from "./ApplicationCard"
 import TenantCard from "./TenantCard"
@@ -339,7 +339,7 @@ export default function AdminDashboard() {
                                 <OverdueTenantCard
                                     tenant={t}
                                     key={t.id}
-                                    onView={() => handleViewTenant(t.id)}
+                                    onNotify={() => notifyOverdueTenant(t.id)}
                                 />
                             ))
                         )}

@@ -145,3 +145,8 @@ export const getOverdueCleaningTenants = async () : Promise<OverdueTenant[]> => 
         { id: 3, name: "Edvards Mozga", room_number: 413, last_laundry_date: null, last_kitchen_cleaning_date: "2026-09-20" },
     ]
 }
+
+// TODO(BE): send a reminder to the tenant (e.g. sendEmail or an in-app notification row)
+export const notifyOverdueTenant = async (id: number) => {
+    console.log(`notify overdue tenant ${id}`)
+}
