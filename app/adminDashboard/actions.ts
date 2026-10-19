@@ -5,8 +5,10 @@ import { Role } from "../types/Role"
 import { User } from "../types/User"
 import { hashPassword } from '../helper/auth/password'
 import { sendEmail } from "../helper/mailer"
+import { requireAdmin } from "../helper/auth/jwt"
 
 export const getUserApplications = async () : Promise<Application[]> => {
+    await requireAdmin()
 
     const supabase = await createClient()
 
@@ -14,6 +16,8 @@ export const getUserApplications = async () : Promise<Application[]> => {
     .from("users")
     .select("social_security_number, email, phone_number, name, id")
     .is("course", null)
+    // Approved users (and admins) have a password; applications don't
+    .is("password", null)
 
     if (error) {
         throw error
@@ -24,6 +28,7 @@ export const getUserApplications = async () : Promise<Application[]> => {
 
 
 export const acceptAndEditApplication = async (u: User) => {
+    await requireAdmin()
 
     const supabase = await createClient()
 
@@ -36,7 +41,7 @@ export const acceptAndEditApplication = async (u: User) => {
     .update({
         ...u,
         password: hashedPassword,
-        role: JSON.stringify(Role.USER),
+        role: Role.USER,
         last_laundry_date: null,
         next_kitchen_cleaning_date: null,
         weekend_stay_count: 0,
@@ -55,7 +60,7 @@ export const acceptAndEditApplication = async (u: User) => {
 
         jūs esat pieņemts RVT kojās. jūsu piekļuves dati ir:
         
-        ē-pasts: ${u.email}
+        personas kods: ${u.social_security_number}
         pagaidu parole: ${generatedPassword}
         `
     })
@@ -66,6 +71,7 @@ export const acceptAndEditApplication = async (u: User) => {
 }
 
 export const rejectApplication = async (id: number) => {
+    await requireAdmin()
     const supabase = await createClient()
 
     const { error } = await supabase
@@ -79,6 +85,7 @@ export const rejectApplication = async (id: number) => {
 }
 
 export const getAllTenants = async () => {
+    await requireAdmin()
     const supabase = await createClient()
 
     const { data, error } = await supabase
@@ -94,6 +101,7 @@ export const getAllTenants = async () => {
 }
 
 export const deleteTenant = async (id: number) => {
+    await requireAdmin()
     const supabase = await createClient()
 
     const { error } = await supabase
@@ -107,6 +115,7 @@ export const deleteTenant = async (id: number) => {
 }
 
 export const getTenantById = async (id: number) : Promise<User> => {
+    await requireAdmin()
     const supabase = await createClient()
 
     const { error, data } = await supabase

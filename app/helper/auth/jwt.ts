@@ -1,54 +1,36 @@
-
-
-import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
+import { Role } from '../../types/Role'
+import { AUTH_COOKIE, SESSION_MAX_AGE, SessionUser, signSessionToken, verifySessionToken } from './token'
 
-type props = {
-    id: number,
-    name: string,
-    email: string,
-    role: string
-}
-
-export const signUser = ({id, name, email, role}: props) => {
-    try {
-        const token = jwt.sign({id, name, email, role}, process.env.JWT_SECRET_KEY as string)
-        return token        
-    } catch (error) {
-        throw error
-    }
-}
-
-export const decodeUserJwt = (token: string) => {
-    try {
-        const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string)        
-        return decoded
-    } catch (error) {
-        throw error
-    }
-}
+export const signUser = (user: SessionUser) => signSessionToken(user)
 
 export const addTokenToCookie = async (token: string) => {
     const cookieStore = await cookies()
-    cookieStore.set("auth_token", token, {
+    cookieStore.set(AUTH_COOKIE, token, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: 60 * 60 * 24 * 7,
+        maxAge: SESSION_MAX_AGE,
     })
 }
 
-export const getCurrentUser = async () => {
+export const removeTokenCookie = async () => {
     const cookieStore = await cookies()
-    const token = cookieStore.get("auth_token")?.value
+    cookieStore.delete(AUTH_COOKIE)
+}
 
-    if (!token) return null
+// The logged-in user, or null when there is no valid session
+export const getCurrentUser = async (): Promise<SessionUser | null> => {
+    const cookieStore = await cookies()
+    return verifySessionToken(cookieStore.get(AUTH_COOKIE)?.value)
+}
 
-    try { 
-        const user = decodeUserJwt(token)
-        return user
-    } catch (error) {
-        throw null
+// Server actions are reachable without going through proxy.ts, so admin actions check the session themselves
+export const requireAdmin = async (): Promise<SessionUser> => {
+    const user = await getCurrentUser()
+    if (!user || user.role !== Role.ADMIN) {
+        throw new Error("Unauthorized")
     }
+    return user
 }

@@ -1,69 +1,71 @@
 "use server";
 
-import { addTokenToCookie, getCurrentUser, signUser } from "../helper/auth/jwt";
+import { redirect } from "next/navigation";
+import { addTokenToCookie, removeTokenCookie, signUser } from "../helper/auth/jwt";
+import { homePathForRole, normalizeRole } from "../helper/auth/token";
 import { verifyPassword } from "../helper/auth/password";
 import { createClient } from "../lib/supabase/server";
-import jwt from 'jsonwebtoken'
-import { User } from "../types/User";
 
+export type LoginResult =
+    | { ok: true, redirectTo: string }
+    | { ok: false, error: string }
 
-type Props = {
-    email: string,
-    password: string
-}
+const INVALID_CREDENTIALS = "Nepareizs personas kods vai parole."
 
-export const loginUser = async ({email, password} : Props) => {
-    
-    const supabase = await createClient()
+// Returns a result instead of throwing: errors thrown from server actions are hidden in production
+export const signInUser = async (socialSecurityNumber: string, password: string): Promise<LoginResult> => {
+    const ssn = socialSecurityNumber.trim()
 
-    const { data, error } = await supabase
-    .from("users")
-    .select("password, email, id, name, role")
-    .eq("email", email)
-    .single()
-
-    if (!data) {
-        throw new Error("user doesnt exist")
+    if (!ssn || !password) {
+        return { ok: false, error: "Ievadi personas kodu un paroli." }
     }
 
-    if (error) {
-        console.error(error)
-        return
+    if (!/^\d{6}-\d{5}$/.test(ssn)) {
+        return { ok: false, error: "Personas kodam jābūt formātā 000000-00000." }
     }
 
+    try {
+        const supabase = await createClient()
 
-    const isPasswordMatch = await verifyPassword(password, data.password)
-    if (!isPasswordMatch) {
-        throw new Error("incorect password")
-    }
-    
-    const token = signUser(
-        {
+        const { data, error } = await supabase
+            .from("users")
+            .select("id, name, email, role, password")
+            .eq("social_security_number", ssn)
+            .maybeSingle()
+
+        if (error) {
+            console.error(error)
+            return { ok: false, error: "Neizdevās sazināties ar serveri. Mēģini vēlreiz." }
+        }
+
+        // No user, or an application that hasn't been approved yet (no password)
+        if (!data?.password) {
+            return { ok: false, error: INVALID_CREDENTIALS }
+        }
+
+        const isPasswordMatch = await verifyPassword(password, data.password)
+        if (!isPasswordMatch) {
+            return { ok: false, error: INVALID_CREDENTIALS }
+        }
+
+        const role = normalizeRole(data.role)
+        const token = signUser({
             id: data.id,
             name: data.name,
             email: data.email,
-            role: data.role
-        }
-    )
+            role,
+        })
 
-    return token
+        await addTokenToCookie(token)
 
+        return { ok: true, redirectTo: homePathForRole(role) }
+    } catch (error) {
+        console.error(error)
+        return { ok: false, error: "Radās neparedzēta kļūda. Mēģini vēlreiz." }
+    }
 }
 
-
-    export const signInUser = async (email:string, password:string) => {
-        try {
-            const token = await loginUser({
-                email: email,
-                password: password
-            })
-            console.log(token)
-            await addTokenToCookie(token as string)
-            const user = await getCurrentUser() as User
-            return user
-        } catch (error) {
-            throw error
-        }
-    }
-
-
+export const logoutUser = async () => {
+    await removeTokenCookie()
+    redirect("/login")
+}

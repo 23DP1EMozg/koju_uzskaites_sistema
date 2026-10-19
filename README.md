@@ -31,7 +31,7 @@ A web app for managing the RVT dormitory: students apply to live there, an admin
 
 ## Running it
 
-Create a `.env` file in the project root with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `BCRYPT` and the `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` settings, then run:
+Create a `.env` file in the project root with `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `BCRYPT`, `JWT_SECRET_KEY` (any long random string) and the `SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS` settings, then run:
 
 ```bash
 npm install

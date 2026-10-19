@@ -2,6 +2,7 @@
 import NavBarCornerButton from './NavBarCornerButton'
 import NavBarListButton from "./NavBarListButton";
 import {useEffect, useState} from "react";
+import {logoutUser} from "@/app/login/actions";
 
 type NavBarProps = {
     accentColor: string;
@@ -52,7 +53,7 @@ export default function NavBar({accentColor}: NavBarProps) {
 
     return (
         <nav className={"fixed z-50 top-5 left-1/2 -translate-x-1/2 w-[95%] flex justify-between items-center h-17"}>
-            <NavBarCornerButton iconRoute="/icons/log-outIcon.svg" accentColor={accentColor}/>
+            <NavBarCornerButton iconRoute="/icons/log-outIcon.svg" accentColor={accentColor} label="Iziet" onClick={() => logoutUser()}/>
             <ul className={"grid grid-cols-4 items-center w-[53%] bg-white rounded-full p-2.5 h-full shadow-[0_4px_14px_rgba(0,0,0,0.12)]"}>
                 {items.map((item) => (
                     <li key={item.sectionId} className={"flex justify-center h-full"}>
