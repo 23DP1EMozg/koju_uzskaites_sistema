@@ -6,6 +6,7 @@ import { User } from "../types/User"
 import { hashPassword } from '../helper/auth/password'
 import { sendEmail } from "../helper/mailer"
 import { Complaint } from "../types/Complaint"
+import { Notification } from "../types/Notification"
 
 export const getUserApplications = async () : Promise<Application[]> => {
 
@@ -135,3 +136,97 @@ export const getAllComplaints = async () : Promise<Complaint[]> => {
 
     return data
 }
+
+export const createNotification = async ({user_id, message, category} : Notification, all?:boolean) => {
+    const supabase = await createClient()
+
+    if (!user_id) throw new Error("invalid user id")
+    if (!message) throw new Error("invalid message")
+    if (!category) throw new Error("invalid category")
+    
+    const { error } = await supabase
+    .from("reminders")
+    .insert([
+        {
+            user_id: all ? -1 : user_id,
+            message,
+            category,
+            read_by: []
+        }
+    ])
+
+    if (error) throw error
+}
+
+export const getUsersNotifications = async (userId: number) => {
+    const supabase = await createClient()
+    const targetUserId = userId || -1
+
+    const { error, data } = await supabase
+    .from("reminders")
+    .select("*")
+    .eq("user_id", targetUserId)
+    .not("read_by", "cs", `{${targetUserId}}`)
+
+    if (error) throw error
+
+    return data
+}
+
+export const deleteNotificationById = async (id: number) => {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+    .from('reminders')
+    .delete()
+    .eq("id", id)
+
+    if (error) throw error
+}
+
+const addUserIdToReadByColumnNotifications = async (userId: number, notificationId: number) => {
+    const supabase = await createClient()
+
+    const { data: reminder, error: fetchError } = await supabase
+        .from("reminders")
+        .select("read_by")
+        .eq("id", notificationId)
+        .single()
+
+    if (fetchError) throw fetchError
+
+    const currentReadBy: number[] = reminder?.read_by || []
+
+    if (!currentReadBy.includes(userId)) {
+        const updatedReadBy = [...currentReadBy, userId]
+
+        const { error: updateError } = await supabase
+            .from("reminders")
+            .update({ read_by: updatedReadBy })
+            .eq("id", notificationId)
+
+        if (updateError) throw updateError
+    }
+}
+
+export const MarkNotificationAsRead = async (notificationId: number, userId:number) => {
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+    .from('reminders')
+    .select("user_id")
+    .eq("id", notificationId)
+    .single()
+    
+    if (error) throw error
+
+    try {
+        if (data.user_id === -1) {
+            addUserIdToReadByColumnNotifications(userId, notificationId)
+        }else {
+            deleteNotificationById(notificationId)
+        }
+    } catch (error) {
+        throw error
+    }
+} 
