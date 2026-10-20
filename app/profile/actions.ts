@@ -3,6 +3,7 @@
 import { getCurrentUser } from "../helper/auth/jwt"
 import { hashPassword, verifyPassword } from "../helper/auth/password"
 import { createClient } from "../lib/supabase/server"
+import { stopPasswordReminders } from "../notifications/passwordReminder"
 import { MIN_PASSWORD_LENGTH } from "./passwordRules"
 
 export type ChangePasswordResult =
@@ -55,6 +56,9 @@ export const changePassword = async (currentPassword: string, newPassword: strin
             console.error(updateError)
             return { ok: false, error: "Neizdevās saglabāt jauno paroli. Mēģini vēlreiz." }
         }
+
+        // The password is already saved, so a failure here only means one more reminder
+        await stopPasswordReminders(user.id).catch(console.error)
 
         return { ok: true }
     } catch (error) {
