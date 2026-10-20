@@ -58,6 +58,9 @@ export default function NavBar({accentColor, isAdmin = false}: NavBarProps) {
         <nav className={"fixed z-50 top-4 md:top-5 inset-x-0 mx-auto w-[calc(100%-32px)] md:w-[95%] flex justify-between items-center h-12 md:h-17"}>
             <div className={"flex items-center gap-2 h-full"}>
                 <NavBarCornerButton iconRoute="/icons/log-outIcon.svg" accentColor={accentColor} label="Iziet" onClick={() => logoutUser()}/>
+                <Link href="/profile" aria-label="Mans profils" style={{backgroundColor: accentColor}} className={"flex items-center justify-center h-full aspect-square shrink-0 rounded-full"}>
+                    <img src="/icons/navProfileIcon.svg" alt="" className={"h-[40%]"}/>
+                </Link>
                 {isAdmin && (
                     <Link href="/adminDashboard" style={{backgroundColor: accentColor}} className={"flex items-center h-full px-4 md:px-6 rounded-full text-white text-sm md:text-base whitespace-nowrap"}>
                         Administrācija
