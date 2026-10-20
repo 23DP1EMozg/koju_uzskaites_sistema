@@ -1,6 +1,7 @@
 'use client'
 import NavBarCornerButton from './NavBarCornerButton'
 import NavBarListButton from "./NavBarListButton";
+import NotificationsMenu from "./NotificationsMenu";
 import {useEffect, useState} from "react";
 import Link from "next/link";
 import {logoutUser} from "@/app/login/actions";
@@ -76,7 +77,7 @@ export default function NavBar({accentColor, isAdmin = false}: NavBarProps) {
                     </li>
                 ))}
             </ul>
-            <NavBarCornerButton iconRoute="/icons/notificationIcon.svg" accentColor={accentColor}/>
+            <NotificationsMenu accentColor={accentColor}/>
         </nav>
     )
 }
