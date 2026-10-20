@@ -7,6 +7,7 @@ import ReportSection from "@/app/report_section/ReportSection";
 import {getFloorTheme} from "@/app/helper/theme";
 import {getCurrentUser} from "@/app/helper/auth/jwt";
 import {createClient} from "@/app/lib/supabase/server";
+import {Role} from "@/app/types/Role";
 
 
 export default async function Home() {
@@ -31,7 +32,7 @@ export default async function Home() {
 
   return (
       <>
-        <NavBar accentColor={theme.accentColor}/>
+        <NavBar accentColor={theme.accentColor} isAdmin={session.role === Role.ADMIN}/>
         <DashboardSection studentRoom={studentRoom} studentFloor={studentFloor} studentName={studentName} studentSurname={surnameParts.join(" ")} accentColor={theme.accentColor} studentCourse={student.course ?? ""} bgImage={theme.homeBg} widgetBg={theme.widgetBg}/>
         <EventSection containerBg={theme.notificationBg}/>
         <FAQSection cardBg={theme.faqCardBg} headingBg={theme.notificationBg}/>

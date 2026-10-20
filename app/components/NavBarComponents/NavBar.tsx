@@ -2,10 +2,12 @@
 import NavBarCornerButton from './NavBarCornerButton'
 import NavBarListButton from "./NavBarListButton";
 import {useEffect, useState} from "react";
+import Link from "next/link";
 import {logoutUser} from "@/app/login/actions";
 
 type NavBarProps = {
     accentColor: string;
+    isAdmin?: boolean;
 };
 
 type NavItem = {
@@ -21,7 +23,7 @@ const items: NavItem[] = [
     {text: 'Pasākumi', iconRoute: '/icons/navEventIcon.svg', sectionId: 'EventSection'},
 ]
 
-export default function NavBar({accentColor}: NavBarProps) {
+export default function NavBar({accentColor, isAdmin = false}: NavBarProps) {
     const [activeSection, setActiveSection] = useState(items[0].sectionId)
 
     useEffect(() => {
@@ -53,7 +55,14 @@ export default function NavBar({accentColor}: NavBarProps) {
 
     return (
         <nav className={"fixed z-50 top-4 md:top-5 inset-x-0 mx-auto w-[calc(100%-32px)] md:w-[95%] flex justify-between items-center h-12 md:h-17"}>
-            <NavBarCornerButton iconRoute="/icons/log-outIcon.svg" accentColor={accentColor} label="Iziet" onClick={() => logoutUser()}/>
+            <div className={"flex items-center gap-2 h-full"}>
+                <NavBarCornerButton iconRoute="/icons/log-outIcon.svg" accentColor={accentColor} label="Iziet" onClick={() => logoutUser()}/>
+                {isAdmin && (
+                    <Link href="/adminDashboard" style={{backgroundColor: accentColor}} className={"flex items-center h-full px-4 md:px-6 rounded-full text-white text-sm md:text-base whitespace-nowrap"}>
+                        Administrācija
+                    </Link>
+                )}
+            </div>
             <ul className={"fixed bottom-4 inset-x-4 h-16 md:static md:w-[53%] md:h-full grid grid-cols-4 items-center bg-white rounded-full p-1.5 md:p-2.5 shadow-[0_4px_14px_rgba(0,0,0,0.12)]"}>
                 {items.map((item) => (
                     <li key={item.sectionId} className={"flex justify-center h-full"}>

@@ -35,11 +35,6 @@ export function proxy(request: NextRequest) {
         return NextResponse.redirect(new URL('/', request.url))
     }
 
-    // The student home page isn't meant for admins
-    if (pathname === '/' && user.role === Role.ADMIN) {
-        return NextResponse.redirect(new URL('/adminDashboard', request.url))
-    }
-
     return NextResponse.next()
 }
 

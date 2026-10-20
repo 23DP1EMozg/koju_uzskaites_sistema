@@ -1,6 +1,7 @@
 "use client"
 
 import { MouseEvent } from "react"
+import Link from "next/link"
 import { logoutUser } from "../login/actions"
 
 export type NavItem = {
@@ -27,19 +28,32 @@ function scrollToSection(e: MouseEvent<HTMLAnchorElement>, id: string) {
 export default function AdminNav({ items, activeId, hasNotifications }: Props) {
     return (
         <nav className="flex items-center justify-between gap-4">
-            <form action={logoutUser}>
-                <button
-                    type="submit"
-                    aria-label="Iziet"
-                    className="grid size-12 cursor-pointer shrink-0 place-items-center rounded-full bg-[#a23a32] text-white shadow-lg transition hover:bg-[#8a2f29] lg:size-[4.9rem]"
+            <div className="flex shrink-0 items-center gap-2">
+                <form action={logoutUser}>
+                    <button
+                        type="submit"
+                        aria-label="Iziet"
+                        className="grid size-12 cursor-pointer shrink-0 place-items-center rounded-full bg-[#a23a32] text-white shadow-lg transition hover:bg-[#8a2f29] lg:size-[4.9rem]"
+                    >
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-5 lg:size-[1.7rem]">
+                            <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" />
+                            <path d="M14 8l4 4-4 4" />
+                            <path d="M18 12H9" />
+                        </svg>
+                    </button>
+                </form>
+                <Link
+                    href="/"
+                    aria-label="Sākumlapa"
+                    className="grid size-12 shrink-0 place-items-center rounded-full bg-[#a23a32] text-white shadow-lg transition hover:bg-[#8a2f29] lg:size-[4.9rem]"
                 >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-5 lg:size-[1.7rem]">
-                        <path d="M10 4H6a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4" />
-                        <path d="M14 8l4 4-4 4" />
-                        <path d="M18 12H9" />
+                        <path d="M3 11l9-7 9 7" />
+                        <path d="M5 10v10h14V10" />
+                        <path d="M10 20v-6h4v6" />
                     </svg>
-                </button>
-            </form>
+                </Link>
+            </div>
 
             <ul className="hidden flex-1 items-center rounded-full bg-white p-2.5 md:flex lg:max-w-[1200px]">
                 {items.map(item => (
