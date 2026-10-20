@@ -141,7 +141,7 @@ export const getAllComplaints = async () : Promise<Complaint[]> => {
 
     const { error, data } = await supabase
     .from("complaints")
-    .select("id, description, created_at")
+    .select("id, user_id, description, created_at")
 
     if (error) throw error
 

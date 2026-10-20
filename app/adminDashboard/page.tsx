@@ -10,6 +10,8 @@ import { User } from "../types/User"
 import ApplicationCard from "./ApplicationCard"
 import TenantCard from "./TenantCard"
 import OverdueTenantCard from "./OverdueTenantCard"
+import ComplaintCard, { complaintSenderLabel, formatComplaintDate } from "./ComplaintCard"
+import Pagination, { usePagination } from "./Pagination"
 import AdminNav, { NavItem } from "./AdminNav"
 import StatCard from "./StatCard"
 import AdminModal from "./AdminModal"
@@ -39,6 +41,10 @@ type PendingConfirm = {
     action: () => Promise<void>,
 }
 
+const APPLICATIONS_PER_PAGE = 4
+const TENANTS_PER_PAGE = 8
+const COMPLAINTS_PER_PAGE = 5
+
 const EMPTY_EDIT_DATA: User = {
     id: 0,
     email: "",
@@ -61,7 +67,8 @@ export default function AdminDashboard() {
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null)
     const [isConfirming, setIsConfirming] = useState(false)
-    const [complaints, setComplaints] = useState<Complaint[]>()
+    const [complaints, setComplaints] = useState<Complaint[]>([])
+    const [complaintViewData, setComplaintViewData] = useState<Complaint | null>(null)
     const [overdueTenants, setOverdueTenants] = useState<OverdueTenant[]>([])
 
     const getApplications = async () => {
@@ -86,7 +93,9 @@ export default function AdminDashboard() {
         getUserApplications().then(setApplications).catch(console.error)
         getAllTenants().then(setTenants).catch(console.error)
         getOverdueCleaningTenants().then(setOverdueTenants).catch(console.error)
-        getComplaints()
+        getAllComplaints()
+            .then(comp => setComplaints([...comp].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? "")))) // newest first
+            .catch(console.error)
         Modal.setAppElement("body")
     }, [])
 
@@ -213,15 +222,11 @@ export default function AdminDashboard() {
         : tenants
 
 
-    const getComplaints = async () => {
-        try {
-            const comp = await getAllComplaints()
-            setComplaints(comp)
-            console.log(comp)
-        } catch (error) {
-            console.error(error)
-        }
-    }
+    const findSender = (userId?: number) => tenants.find(t => t.id === userId)
+
+    const applicationPages = usePagination(applications, APPLICATIONS_PER_PAGE)
+    const tenantPages = usePagination(filteredTenants, TENANTS_PER_PAGE)
+    const complaintPages = usePagination(complaints, COMPLAINTS_PER_PAGE)
 
     return (
         <div className={`${inter.className} min-h-dvh bg-white`}>
@@ -275,7 +280,7 @@ export default function AdminDashboard() {
                     <p className="mt-12 text-lg text-white/60 lg:mt-16">Nav jaunu pieteikumu.</p>
                 ) : (
                     <div className="mt-10 grid grid-cols-1 gap-6 lg:mt-14 xl:grid-cols-2 xl:gap-10">
-                        {applications.map(a => (
+                        {applicationPages.pageItems.map(a => (
                             <ApplicationCard
                                 data={a}
                                 onAccept={() => handleAccept(a)}
@@ -285,6 +290,7 @@ export default function AdminDashboard() {
                         ))}
                     </div>
                 )}
+                <Pagination page={applicationPages.page} pageCount={applicationPages.pageCount} onChange={applicationPages.setPage} variant="dark" />
             </section>
 
             {/* Tenants */}
@@ -296,7 +302,7 @@ export default function AdminDashboard() {
                     <input
                         type="search"
                         value={tenantSearch}
-                        onChange={e => setTenantSearch(e.target.value)}
+                        onChange={e => { setTenantSearch(e.target.value); tenantPages.setPage(1) }}
                         placeholder="Meklēt pēc vārda vai istabas"
                         aria-label="Meklēt iemītniekus"
                         className="w-full rounded-full border border-black px-6 py-4 text-lg outline-none transition focus:ring-2 focus:ring-[#a23a32] lg:mb-2 lg:max-w-[600px] lg:py-5"
@@ -309,7 +315,7 @@ export default function AdminDashboard() {
                             {search ? "Neviens iemītnieks neatbilst meklējumam." : "Sistēmā vēl nav iemītnieku."}
                         </p>
                     ) : (
-                        filteredTenants.map(t => (
+                        tenantPages.pageItems.map(t => (
                             <TenantCard
                                 tenant={t}
                                 key={t.id}
@@ -319,6 +325,7 @@ export default function AdminDashboard() {
                         ))
                     )}
                 </div>
+                <Pagination page={tenantPages.page} pageCount={tenantPages.pageCount} onChange={tenantPages.setPage} variant="light" />
             </section>
 
             {/* Overdue cleaning — tenants who skipped laundry or kitchen cleaning for over 3 weeks */}
@@ -347,7 +354,7 @@ export default function AdminDashboard() {
                 </div>
             </section>
 
-            {/* Complaints — placeholder until tenants can submit complaints */}
+            {/* Complaints submitted by tenants */}
             <section
                 id="sudzibas"
                 className="scroll-mt-4 rounded-[3rem] bg-black px-4 py-14 text-white lg:px-[7.5rem] lg:py-28"
@@ -359,12 +366,29 @@ export default function AdminDashboard() {
                     </p>
                 </div>
 
-                <div className="mt-10 flex flex-col items-center justify-center gap-3 rounded-[28px] border border-dashed border-white/25 px-6 py-16 text-center lg:mt-14 lg:py-24">
-                    <span className="text-2xl font-extrabold italic tracking-tight text-[#a23a32] lg:text-3xl">Nav sūdzību</span>
-                    <p className="max-w-md text-white/60 lg:text-lg">
-                        Šeit parādīsies iemītnieku iesniegtās sūdzības.
-                    </p>
-                </div>
+                {complaints.length === 0 ? (
+                    <div className="mt-10 flex flex-col items-center justify-center gap-3 rounded-[28px] border border-dashed border-white/25 px-6 py-16 text-center lg:mt-14 lg:py-24">
+                        <span className="text-2xl font-extrabold italic tracking-tight text-[#a23a32] lg:text-3xl">Nav sūdzību</span>
+                        <p className="max-w-md text-white/60 lg:text-lg">
+                            Šeit parādīsies iemītnieku iesniegtās sūdzības.
+                        </p>
+                    </div>
+                ) : (
+                    <>
+                        <div className="mt-10 flex flex-col gap-5 lg:mt-14">
+                            {complaintPages.pageItems.map(c => (
+                                <ComplaintCard
+                                    complaint={c}
+                                    sender={findSender(c.user_id)}
+                                    key={c.id}
+                                    onView={() => setComplaintViewData(c)}
+                                />
+                            ))}
+                        </div>
+
+                        <Pagination page={complaintPages.page} pageCount={complaintPages.pageCount} onChange={complaintPages.setPage} variant="dark" />
+                    </>
+                )}
             </section>
 
             <footer className="mt-5 h-24 rounded-t-[3rem] bg-black lg:h-32" />
@@ -401,6 +425,21 @@ export default function AdminDashboard() {
                 onConfirm={runPendingConfirm}
                 onCancel={() => { if (!isConfirming) setPendingConfirm(null) }}
             />
+
+            {/* View complaint */}
+            <AdminModal isOpen={complaintViewData != null} onClose={() => setComplaintViewData(null)} title="Sūdzība">
+                <dl className="grid grid-cols-1 gap-x-12 gap-y-5 border-l-2 border-[#a23a32] pl-6 sm:grid-cols-2">
+                    <div className="min-w-0">
+                        <dt className="text-sm text-white/60">Iesniedza</dt>
+                        <dd className="text-lg">{complaintSenderLabel(findSender(complaintViewData?.user_id))}</dd>
+                    </div>
+                    <div className="min-w-0">
+                        <dt className="text-sm text-white/60">Datums</dt>
+                        <dd className="text-lg">{formatComplaintDate(complaintViewData?.created_at)}</dd>
+                    </div>
+                </dl>
+                <p className="mt-8 whitespace-pre-line break-words text-lg text-white/90">{complaintViewData?.description}</p>
+            </AdminModal>
 
             {/* View tenant */}
             <AdminModal isOpen={isTenantModalOpen} onClose={handleCloseTenantModal} title={tenantViewData?.name ?? "Iemītnieks"}>
