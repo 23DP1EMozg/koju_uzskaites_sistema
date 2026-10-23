@@ -33,14 +33,13 @@ export const acceptAndEditApplication = async (u: User) => {
     const generatedPassword = Math.floor(100000 + Math.random() * 900000).toString()
     const hashedPassword = await hashPassword(generatedPassword.toString())
 
-
     const { error } = await supabase
     .from("users")
     .update({
         ...u,
         password: hashedPassword,
         role: JSON.stringify(Role.USER),
-        last_laundry_date: null,
+        last_laundry_date: new Date().toISOString(),
         next_kitchen_cleaning_date: null,
         weekend_stay_count: 0,
     })
@@ -242,7 +241,49 @@ export const getOverdueCleaningTenants = async () : Promise<OverdueTenant[]> => 
     ]
 }
 
-// TODO(BE): send a reminder to the tenant (e.g. sendEmail or an in-app notification row)
+export const getOverdueLaundryTenants = async () : Promise<OverdueTenant[]> => {
+    const supabase = await createClient()
+
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    const thresholdDate = thirtyDaysAgo.toISOString()
+
+    const { data, error } = await supabase
+    .from("users")
+    .select("room_number, name, last_laundry_date")
+    .lte("last_laundry_date", thresholdDate)
+
+    if (error) throw error
+    if (!data) return []
+
+    const now = new Date().getTime()
+
+    return data.map((tenant) => {
+        const laundryTime = tenant.last_laundry_date ? new Date(tenant.last_laundry_date).getTime() : now
+        const diffDays = Math.floor((now - laundryTime) / (1000 * 60 * 60 * 24))
+
+        return {
+            ...tenant,
+            days_since_laundry: diffDays
+        }
+    })
+}
+
+export const resetTenantsLaundryDate = async (userId: number) => {
+    const supabase = await createClient()
+
+    const { error } = await supabase
+    .from("users")
+    .update({ last_laundry_date: new Date().toDateString() })
+    .eq("id", userId)
+
+    if (error) throw error
+}
+
 export const notifyOverdueTenant = async (id: number) => {
-    console.log(`notify overdue tenant ${id}`)
+    try {
+        await createNotification({ user_id: id, message: "jums ir jānodod veļa", category: "Atgādinājums" })
+    } catch (error) {
+        throw error
+    }
 }

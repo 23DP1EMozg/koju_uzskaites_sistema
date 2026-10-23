@@ -1,8 +1,9 @@
 
 export type OverdueTenant = {
-    id: number,
+    id?: number,
     name: string,
     room_number: number,
     last_laundry_date: string | null,
-    last_kitchen_cleaning_date: string | null
+    last_kitchen_cleaning_date?: string | null,
+    days_since_laundry?: number
 }

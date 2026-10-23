@@ -1,4 +1,4 @@
-
+"use server"
 
 import { User } from '@/app/types/User'
 import jwt from 'jsonwebtoken'
@@ -11,7 +11,7 @@ type props = {
     role: string
 }
 
-export const signUser = ({id, name, email, role}: props) => {
+export const signUser = async ({id, name, email, role}: props) => {
     try {
         const token = jwt.sign({id, name, email, role}, process.env.JWT_SECRET_KEY as string)
         return token        
@@ -20,7 +20,7 @@ export const signUser = ({id, name, email, role}: props) => {
     }
 }
 
-export const decodeUserJwt = (token: string) => {
+export const decodeUserJwt = async (token: string) => {
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET_KEY as string)        
         return decoded
