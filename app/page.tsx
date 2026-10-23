@@ -1,3 +1,5 @@
+"use client";
+
 import { redirect } from "next/navigation";
 import NavBar from "@/app/components/NavBarComponents/NavBar";
 import DashboardSection from "@/app/main_dashboard/DashboardSection";
@@ -5,7 +7,10 @@ import EventSection from "@/app/event_section/EventSection";
 import FAQSection from "@/app/faq_section/FAQSection";
 import ReportSection from "@/app/report_section/ReportSection";
 import {getFloorTheme} from "@/app/helper/theme";
-import {getCurrentUser} from "@/app/helper/auth/jwt";
+import { useEffect, useState } from "react";
+import { getCurrentUser } from "./helper/auth/jwt";
+import { User } from "./types/User";
+import { useRouter } from "next/navigation";
 import {createClient} from "@/app/lib/supabase/server";
 import {Role} from "@/app/types/Role";
 
@@ -29,6 +34,24 @@ export default async function Home() {
   // Floor is the first digit of the room number (e.g. 235 -> 2)
   const studentFloor = studentRoom ? Number(String(studentRoom)[0]) : 0
   const theme = getFloorTheme(studentFloor || null)
+
+  const [user, setUser] = useState<User>()
+  const router = useRouter()
+
+  const getLoggedInUser = async () => {
+    const u = await getCurrentUser()
+    if (!u) {
+      router.push("/login")
+      return
+    }
+
+    console.log(u)
+    setUser(u)
+  }
+
+  useEffect(() => {
+    getLoggedInUser()
+  }, [])
 
   return (
       <>
