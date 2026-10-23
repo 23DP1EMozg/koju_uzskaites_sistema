@@ -38,6 +38,7 @@ export const acceptAndEditApplication = async (u: User) => {
     const generatedPassword = Math.floor(100000 + Math.random() * 900000).toString()
     const hashedPassword = await hashPassword(generatedPassword.toString())
 
+
     const { error } = await supabase
     .from("users")
     .update({
@@ -168,87 +169,41 @@ export const createNotification = async ({user_id, message, category} : Notifica
     if (error) throw error
 }
 
-export const getUsersNotifications = async (userId: number) => {
-    const supabase = await createClient()
-    const targetUserId = userId || -1
+// Matches the "vairāk nekā 3 nedēļas" text in the admin Kavētāji section
+const OVERDUE_LAUNDRY_DAYS = 21
+const LAUNDRY_REMINDER_CATEGORY = "Atgādinājums"
 
-    const { error, data } = await supabase
-    .from("reminders")
-    .select("*")
-    .eq("user_id", targetUserId)
-    .not("read_by", "cs", `{${targetUserId}}`)
-
-    if (error) throw error
-
-    return data
-}
-
-export const deleteNotificationById = async (id: number) => {
+// Tenants whose last laundry change is older than OVERDUE_LAUNDRY_DAYS; never-set dates (new tenants) are skipped
+export const getOverdueLaundryTenants = async () : Promise<OverdueTenant[]> => {
+    await requireAdmin()
     const supabase = await createClient()
 
-    const { error } = await supabase
-    .from('reminders')
-    .delete()
-    .eq("id", id)
-
-    if (error) throw error
-}
-
-const addUserIdToReadByColumnNotifications = async (userId: number, notificationId: number) => {
-    const supabase = await createClient()
-
-    const { data: reminder, error: fetchError } = await supabase
-        .from("reminders")
-        .select("read_by")
-        .eq("id", notificationId)
-        .single()
-
-    if (fetchError) throw fetchError
-
-    const currentReadBy: number[] = reminder?.read_by || []
-
-    if (!currentReadBy.includes(userId)) {
-        const updatedReadBy = [...currentReadBy, userId]
-
-        const { error: updateError } = await supabase
-            .from("reminders")
-            .update({ read_by: updatedReadBy })
-            .eq("id", notificationId)
-
-        if (updateError) throw updateError
-    }
-}
-
-export const MarkNotificationAsRead = async (notificationId: number, userId:number) => {
-    const supabase = await createClient()
+    const threshold = new Date(Date.now() - OVERDUE_LAUNDRY_DAYS * 86_400_000)
+        .toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" }) // YYYY-MM-DD
 
     const { data, error } = await supabase
-    .from('reminders')
-    .select("user_id")
-    .eq("id", notificationId)
-    .single()
-    
+    .from("users")
+    .select("id, name, room_number, last_laundry_date")
+    .lt("last_laundry_date", threshold)
+    .order("last_laundry_date", { ascending: true })
+
     if (error) throw error
+    if (data.length === 0) return []
 
-    try {
-        if (data.user_id === -1) {
-            addUserIdToReadByColumnNotifications(userId, notificationId)
-        }else {
-            deleteNotificationById(notificationId)
-        }
-    } catch (error) {
-        throw error
-    }
-} 
+    // A reminder sent after the student's last laundry change means this overdue period was already reminded
+    const { data: reminders, error: remindersError } = await supabase
+    .from("reminders")
+    .select("user_id, created_at")
+    .eq("category", LAUNDRY_REMINDER_CATEGORY)
+    .in("user_id", data.map(tenant => tenant.id))
 
+    if (remindersError) throw remindersError
 
-// TODO(BE): replace mock with a users query where last_laundry_date or last_kitchen_cleaning_date is older than 21 days
-export const getOverdueCleaningTenants = async () : Promise<OverdueTenant[]> => {
-    return [
-        { id: 1, name: "Liene Ozola", room_number: 101, last_laundry_date: "2026-09-14", last_kitchen_cleaning_date: null },
-        { id: 2, name: "Anna Kalniņa", room_number: 312, last_laundry_date: "2026-09-02", last_kitchen_cleaning_date: "2026-08-28" },
-        { id: 3, name: "Edvards Mozga", room_number: 413, last_laundry_date: null, last_kitchen_cleaning_date: "2026-09-20" },
-    ]
+    return data.map(tenant => ({
+        ...tenant,
+        reminded: reminders.some(reminder =>
+            reminder.user_id === tenant.id && new Date(reminder.created_at) >= new Date(tenant.last_laundry_date)),
+    }))
 }
 
 export const getOverdueLaundryTenants = async () : Promise<OverdueTenant[]> => {
@@ -291,9 +246,12 @@ export const resetTenantsLaundryDate = async (userId: number) => {
 }
 
 export const notifyOverdueTenant = async (id: number) => {
+    await requireAdmin()
     try {
-        await createNotification({ user_id: id, message: "jums ir jānodod veļa", category: "Atgādinājums" })
+        await createNotification({ user_id: id, message: "Jums ir jānodod veļa", category: LAUNDRY_REMINDER_CATEGORY })
     } catch (error) {
         throw error
     }
+
+
 }

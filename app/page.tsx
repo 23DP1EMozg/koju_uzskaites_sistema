@@ -13,6 +13,10 @@ import { User } from "./types/User";
 import { useRouter } from "next/navigation";
 import {createClient} from "@/app/lib/supabase/server";
 import {Role} from "@/app/types/Role";
+import {getMyNotifications} from "@/app/notifications/actions";
+
+const formatDate = (date?: string | null) =>
+  date ? new Date(date).toLocaleDateString("en-GB", { timeZone: "Europe/Riga" }) : "—"
 
 
 export default async function Home() {
@@ -22,7 +26,7 @@ export default async function Home() {
   const supabase = await createClient()
   const { data: student } = await supabase
     .from("users")
-    .select("name, room_number, course")
+    .select("name, room_number, course, last_laundry_date, next_kitchen_cleaning_date")
     .eq("id", session.id)
     .maybeSingle()
 
@@ -53,10 +57,12 @@ export default async function Home() {
     getLoggedInUser()
   }, [])
 
+  const latestMessage = (await getMyNotifications().catch(() => []))[0]?.message ?? ""
+
   return (
       <>
         <NavBar accentColor={theme.accentColor} isAdmin={session.role === Role.ADMIN}/>
-        <DashboardSection studentRoom={studentRoom} studentFloor={studentFloor} studentName={studentName} studentSurname={surnameParts.join(" ")} accentColor={theme.accentColor} studentCourse={student.course ?? ""} bgImage={theme.homeBg} widgetBg={theme.widgetBg}/>
+        <DashboardSection studentRoom={studentRoom} studentFloor={studentFloor} studentName={studentName} studentSurname={surnameParts.join(" ")} accentColor={theme.accentColor} studentCourse={student.course ?? ""} bgImage={theme.homeBg} widgetBg={theme.widgetBg} kitchenCleaningDate={formatDate(student.next_kitchen_cleaning_date)} laundryDate={formatDate(student.last_laundry_date)} message={latestMessage}/>
         <EventSection containerBg={theme.notificationBg}/>
         <FAQSection cardBg={theme.faqCardBg} headingBg={theme.notificationBg}/>
         <ReportSection bgImage={theme.homeBg}/>

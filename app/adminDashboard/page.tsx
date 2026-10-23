@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Inter } from "next/font/google"
 import Modal from "react-modal"
 import { Application } from "../apply/Application"
-import { acceptAndEditApplication, deleteTenant, getAllComplaints, getAllTenants, getOverdueCleaningTenants, getTenantById, notifyOverdueTenant, getUserApplications, rejectApplication, getOverdueLaundryTenants } from "./actions"
+import { acceptAndEditApplication, deleteTenant, getAllComplaints, getAllTenants, getOverdueLaundryTenants, getTenantById, notifyOverdueTenant, getUserApplications, rejectApplication } from "./actions"
 import { User } from "../types/User"
 import ApplicationCard from "./ApplicationCard"
 import TenantCard from "./TenantCard"
@@ -98,7 +98,7 @@ export default function AdminDashboard() {
     useEffect(() => {
         getUserApplications().then(setApplications).catch(console.error)
         getAllTenants().then(setTenants).catch(console.error)
-        getOverdueCleaningTenants().then(setOverdueTenants).catch(console.error)
+        getOverdueLaundryTenants().then(setOverdueTenants).catch(console.error)
         getAllComplaints()
             .then(comp => setComplaints([...comp].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? "")))) // newest first
             .catch(console.error)
