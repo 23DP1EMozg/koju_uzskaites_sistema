@@ -1,6 +1,6 @@
 
 export type OverdueTenant = {
-    id?: number,
+    id: number,
     name: string,
     room_number: number,
     last_laundry_date: string | null,

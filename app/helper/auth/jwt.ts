@@ -1,7 +1,3 @@
-"use server"
-
-import { User } from '@/app/types/User'
-import jwt from 'jsonwebtoken'
 import { cookies } from 'next/headers'
 import { Role } from '../../types/Role'
 import { AUTH_COOKIE, SESSION_MAX_AGE, SessionUser, signSessionToken, verifySessionToken } from './token'
