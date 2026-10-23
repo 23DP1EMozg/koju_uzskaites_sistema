@@ -149,6 +149,7 @@ export const getAllComplaints = async () : Promise<Complaint[]> => {
 }
 
 export const createNotification = async ({user_id, message, category} : Notification, all?:boolean) => {
+    await requireAdmin()
     const supabase = await createClient()
 
     if (!user_id) throw new Error("invalid user id")
@@ -169,82 +170,9 @@ export const createNotification = async ({user_id, message, category} : Notifica
     if (error) throw error
 }
 
-export const getUsersNotifications = async (userId: number) => {
-    const supabase = await createClient()
-    const targetUserId = userId || -1
-
-    const { error, data } = await supabase
-    .from("reminders")
-    .select("*")
-    .eq("user_id", targetUserId)
-    .not("read_by", "cs", `{${targetUserId}}`)
-
-    if (error) throw error
-
-    return data
-}
-
-export const deleteNotificationById = async (id: number) => {
-    const supabase = await createClient()
-
-    const { error } = await supabase
-    .from('reminders')
-    .delete()
-    .eq("id", id)
-
-    if (error) throw error
-}
-
-const addUserIdToReadByColumnNotifications = async (userId: number, notificationId: number) => {
-    const supabase = await createClient()
-
-    const { data: reminder, error: fetchError } = await supabase
-        .from("reminders")
-        .select("read_by")
-        .eq("id", notificationId)
-        .single()
-
-    if (fetchError) throw fetchError
-
-    const currentReadBy: number[] = reminder?.read_by || []
-
-    if (!currentReadBy.includes(userId)) {
-        const updatedReadBy = [...currentReadBy, userId]
-
-        const { error: updateError } = await supabase
-            .from("reminders")
-            .update({ read_by: updatedReadBy })
-            .eq("id", notificationId)
-
-        if (updateError) throw updateError
-    }
-}
-
-export const MarkNotificationAsRead = async (notificationId: number, userId:number) => {
-    const supabase = await createClient()
-
-    const { data, error } = await supabase
-    .from('reminders')
-    .select("user_id")
-    .eq("id", notificationId)
-    .single()
-    
-    if (error) throw error
-
-    try {
-        if (data.user_id === -1) {
-            addUserIdToReadByColumnNotifications(userId, notificationId)
-        }else {
-            deleteNotificationById(notificationId)
-        }
-    } catch (error) {
-        throw error
-    }
-} 
-
-
 // Matches the "vairāk nekā 3 nedēļas" text in the admin Kavētāji section
 const OVERDUE_LAUNDRY_DAYS = 21
+const LAUNDRY_REMINDER_CATEGORY = "Atgādinājums"
 
 // Tenants whose last laundry change is older than OVERDUE_LAUNDRY_DAYS; never-set dates (new tenants) are skipped
 export const getOverdueLaundryTenants = async () : Promise<OverdueTenant[]> => {
@@ -261,11 +189,25 @@ export const getOverdueLaundryTenants = async () : Promise<OverdueTenant[]> => {
     .order("last_laundry_date", { ascending: true })
 
     if (error) throw error
+    if (data.length === 0) return []
 
-    return data
+    // A reminder sent after the student's last laundry change means this overdue period was already reminded
+    const { data: reminders, error: remindersError } = await supabase
+    .from("reminders")
+    .select("user_id, created_at")
+    .eq("category", LAUNDRY_REMINDER_CATEGORY)
+    .in("user_id", data.map(tenant => tenant.id))
+
+    if (remindersError) throw remindersError
+
+    return data.map(tenant => ({
+        ...tenant,
+        reminded: reminders.some(reminder =>
+            reminder.user_id === tenant.id && new Date(reminder.created_at) >= new Date(tenant.last_laundry_date)),
+    }))
 }
 
 export const notifyOverdueTenant = async (id: number) => {
     await requireAdmin()
-    await createNotification({ user_id: id, message: "Jums ir jānodod veļa", category: "Atgādinājums" })
+    await createNotification({ user_id: id, message: "Jums ir jānodod veļa", category: LAUNDRY_REMINDER_CATEGORY })
 }

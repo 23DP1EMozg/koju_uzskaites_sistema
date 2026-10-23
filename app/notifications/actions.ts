@@ -1,6 +1,6 @@
 "use server"
 import { getCurrentUser } from "../helper/auth/jwt"
-import { getUsersNotifications, MarkNotificationAsRead } from "../adminDashboard/actions"
+import { getUsersNotifications, MarkNotificationAsRead } from "./reminders"
 import { Notification } from "../types/Notification"
 import { ensureWeeklyPasswordReminder, markPasswordReminderAsRead, PASSWORD_REMINDER_CATEGORY } from "./passwordReminder"
 
