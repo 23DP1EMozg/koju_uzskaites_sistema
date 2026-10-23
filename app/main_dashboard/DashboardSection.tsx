@@ -3,6 +3,7 @@ import DashboardAccentBtn from "@/app/components/dashboardComponents/DashboardAc
 import DashboardStrokeButton from "@/app/components/dashboardComponents/DashboardStrokeButton";
 import DashboardEventWidget from "@/app/components/dashboardComponents/DashboardEventWidget";
 import DashboardMessagesWidget from "@/app/components/dashboardComponents/DashboardMessagesWidget";
+import {markLaundryDone} from "@/app/actions";
 
 type DashboardSectionProps = {
     studentFloor: number
@@ -34,7 +35,7 @@ export default function DashboardSection({studentCourse,studentRoom,studentFloor
                 <h1 style={{color: accentColor}} className={`font-black italic text-[80px] md:text-[110px] leading-[0.8]`}>{String(studentRoom).padStart(3, '0')}</h1>
                 <div className={`flex flex-row items-start justify-between gap-3 md:gap-12 w-full`}>
                     <DashboardAccentColorWidget accentColor={accentColor} date={kitchenCleaningDate} text={"Nakama virtuves tirisana"}/>
-                    <DashboardAccentColorWidget accentColor={accentColor} date={laundryDate} text={"Pēdējā veļas maiņa"}/>
+                    <DashboardAccentColorWidget accentColor={accentColor} date={laundryDate} text={"Pēdējā veļas maiņa"} onApply={markLaundryDone}/>
                 </div>
             </div>
             <div className="flex flex-col items-end justify-start w-full md:w-[40%] gap-3 md:gap-11">

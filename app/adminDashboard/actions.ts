@@ -243,16 +243,29 @@ export const MarkNotificationAsRead = async (notificationId: number, userId:numb
 } 
 
 
-// TODO(BE): replace mock with a users query where last_laundry_date or last_kitchen_cleaning_date is older than 21 days
-export const getOverdueCleaningTenants = async () : Promise<OverdueTenant[]> => {
-    return [
-        { id: 1, name: "Liene Ozola", room_number: 101, last_laundry_date: "2026-09-14", last_kitchen_cleaning_date: null },
-        { id: 2, name: "Anna Kalniņa", room_number: 312, last_laundry_date: "2026-09-02", last_kitchen_cleaning_date: "2026-08-28" },
-        { id: 3, name: "Edvards Mozga", room_number: 413, last_laundry_date: null, last_kitchen_cleaning_date: "2026-09-20" },
-    ]
+// Matches the "vairāk nekā 3 nedēļas" text in the admin Kavētāji section
+const OVERDUE_LAUNDRY_DAYS = 21
+
+// Tenants whose last laundry change is older than OVERDUE_LAUNDRY_DAYS; never-set dates (new tenants) are skipped
+export const getOverdueLaundryTenants = async () : Promise<OverdueTenant[]> => {
+    await requireAdmin()
+    const supabase = await createClient()
+
+    const threshold = new Date(Date.now() - OVERDUE_LAUNDRY_DAYS * 86_400_000)
+        .toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" }) // YYYY-MM-DD
+
+    const { data, error } = await supabase
+    .from("users")
+    .select("id, name, room_number, last_laundry_date")
+    .lt("last_laundry_date", threshold)
+    .order("last_laundry_date", { ascending: true })
+
+    if (error) throw error
+
+    return data
 }
 
-// TODO(BE): send a reminder to the tenant (e.g. sendEmail or an in-app notification row)
 export const notifyOverdueTenant = async (id: number) => {
-    console.log(`notify overdue tenant ${id}`)
+    await requireAdmin()
+    await createNotification({ user_id: id, message: "Jums ir jānodod veļa", category: "Atgādinājums" })
 }

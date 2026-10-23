@@ -8,8 +8,6 @@ type Props = {
     onNotify: () => Promise<void>
 }
 
-const OVERDUE_DAYS = 21
-
 const daysSince = (date: string) => Math.floor((Date.now() - new Date(date).getTime()) / 86_400_000)
 
 export default function OverdueTenantCard({ tenant, onNotify }: Props) {
@@ -18,7 +16,7 @@ export default function OverdueTenantCard({ tenant, onNotify }: Props) {
         ["Veļa", tenant.last_laundry_date],
         ["Virtuve", tenant.last_kitchen_cleaning_date],
     ]
-        .filter((task): task is [string, string] => task[1] != null && daysSince(task[1]) > OVERDUE_DAYS)
+        .filter((task): task is [string, string] => task[1] != null)
         .map(([label, date]) => ({ label, days: daysSince(date) }))
 
     return (
