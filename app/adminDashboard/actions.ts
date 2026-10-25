@@ -8,6 +8,8 @@ import { User } from "../types/User"
 import { hashPassword } from '../helper/auth/password'
 import { sendEmail } from "../helper/mailer"
 import { requireAdmin } from "../helper/auth/jwt"
+import { normalizeRole } from "../helper/auth/token"
+import { restartPasswordReminders } from "../notifications/passwordReminder"
 import { Complaint } from "../types/Complaint"
 import { Notification } from "../types/Notification"
 import { OverdueTenant } from "../types/OverdueTenant"
@@ -42,9 +44,35 @@ const TEMPORARY_PASSWORD_LENGTH = 10
 const generateTemporaryPassword = () =>
     Array.from({ length: TEMPORARY_PASSWORD_LENGTH }, () => PASSWORD_ALPHABET[randomInt(PASSWORD_ALPHABET.length)]).join("")
 
-export type AcceptApplicationResult =
-    | { ok: true, emailSent: boolean }
+// The password is only returned when the email failed, so the admin can hand it over in person
+export type TemporaryPasswordResult =
+    | { ok: true, emailSent: true }
+    | { ok: true, emailSent: false, password: string }
     | { ok: false, error: string }
+
+export type AcceptApplicationResult = TemporaryPasswordResult
+
+const emailTemporaryPassword = async (email: string, socialSecurityNumber: string, password: string, accepted: boolean)
+    : Promise<TemporaryPasswordResult> => {
+    const result = await sendEmail({
+        to: email,
+        subject: accepted ? "Pieņemšana dienesta viesnīcā" : "Jauna pagaidu parole",
+        message: `
+        Sveiki!
+
+        ${accepted ? "jūs esat pieņemts RVT kojās. jūsu piekļuves dati ir:" : "jums ir izveidota jauna pagaidu parole. jūsu piekļuves dati ir:"}
+        
+        personas kods: ${socialSecurityNumber}
+        pagaidu parole: ${password}
+        `
+    })
+
+    if (!result.success) {
+        console.error(result.error)
+        return { ok: true, emailSent: false, password }
+    }
+    return { ok: true, emailSent: true }
+}
 
 export const acceptAndEditApplication = async (u: User): Promise<AcceptApplicationResult> => {
     await requireAdmin()
@@ -110,24 +138,45 @@ export const acceptAndEditApplication = async (u: User): Promise<AcceptApplicati
     // Already accepted or deleted: don't email a password that wasn't saved
     if (accepted.length === 0) return { ok: false, error: "Pieteikums vairs nav pieejams. Pārlādē lapu." }
 
-    const result = await sendEmail({
-        to: fields.email.trim(),
-        subject: "Pieņemšana dienesta viesnīcā",
-        message: `
-        Sveiki!
+    return emailTemporaryPassword(fields.email.trim(), fields.social_security_number.trim(), generatedPassword, true)
+}
 
-        jūs esat pieņemts RVT kojās. jūsu piekļuves dati ir:
-        
-        personas kods: ${fields.social_security_number.trim()}
-        pagaidu parole: ${generatedPassword}
-        `
-    })
+// For a tenant who lost or never got their password: replaces it with a new temporary one
+export const sendNewTemporaryPassword = async (id: number): Promise<TemporaryPasswordResult> => {
+    await requireAdmin()
+    if (!Number.isInteger(id)) return { ok: false, error: "Iemītnieks nav atrasts." }
 
-    if (!result.success) {
-        console.error(result.error)
+    const supabase = await createClient()
+
+    const { data: tenant, error: tenantError } = await supabase
+    .from("users")
+    .select("email, social_security_number, role, password")
+    .eq("id", id)
+    .maybeSingle()
+
+    if (tenantError) {
+        console.error(tenantError)
+        return { ok: false, error: "Neizdevās izveidot jaunu paroli. Mēģini vēlreiz." }
+    }
+    // Applications have no password yet, and admin passwords are never reset from here
+    if (!tenant?.password || normalizeRole(tenant.role) === Role.ADMIN) return { ok: false, error: "Iemītnieks nav atrasts." }
+
+    const generatedPassword = generateTemporaryPassword()
+
+    const { error } = await supabase
+    .from("users")
+    .update({ password: await hashPassword(generatedPassword) })
+    .eq("id", id)
+
+    if (error) {
+        console.error(error)
+        return { ok: false, error: "Neizdevās izveidot jaunu paroli. Mēģini vēlreiz." }
     }
 
-    return { ok: true, emailSent: result.success }
+    // The new password is saved, so a failure here only means a missing reminder
+    await restartPasswordReminders(id).catch(console.error)
+
+    return emailTemporaryPassword(tenant.email, tenant.social_security_number, generatedPassword, false)
 }
 
 export const rejectApplication = async (id: number) => {

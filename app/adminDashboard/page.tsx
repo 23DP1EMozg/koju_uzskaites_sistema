@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Inter } from "next/font/google"
 import Modal from "react-modal"
 import { Application } from "../apply/Application"
-import { acceptAndEditApplication, deleteTenant, getAllComplaints, getAllTenants, getOverdueLaundryTenants, getTenantById, notifyOverdueTenant, getUserApplications, getWeekendStays, rejectApplication, setWeekendStayStatus } from "./actions"
+import { acceptAndEditApplication, deleteTenant, getAllComplaints, getAllTenants, getOverdueLaundryTenants, getTenantById, notifyOverdueTenant, getUserApplications, getWeekendStays, rejectApplication, sendNewTemporaryPassword, setWeekendStayStatus } from "./actions"
 import { User } from "../types/User"
 import ApplicationCard from "./ApplicationCard"
 import TenantCard from "./TenantCard"
@@ -70,6 +70,13 @@ export default function AdminDashboard() {
     const [isTenantModalOpen, setIsTenantModalOpen] = useState<boolean>(false)
     const [applicationEditData, setApplicationEditData] = useState<User>(EMPTY_EDIT_DATA)
     const [tenantViewData, setTenantViewData] = useState<User | null>(null)
+    const [tenantViewId, setTenantViewId] = useState<number | null>(null)
+    // Resetting the password locks the tenant out of the old one, so the button asks once more first
+    const [isConfirmingPasswordReset, setIsConfirmingPasswordReset] = useState(false)
+    const [isSendingPassword, setIsSendingPassword] = useState(false)
+    const [passwordResetMessage, setPasswordResetMessage] = useState<string | null>(null)
+    // A temporary password whose email failed, shown so the admin can hand it over in person
+    const [issuedPassword, setIssuedPassword] = useState<{ name: string, password: string } | null>(null)
     const [tenantSearch, setTenantSearch] = useState("")
     const [activeSection, setActiveSection] = useState(NAV_ITEMS[0].id)
     const [isSubmitting, setIsSubmitting] = useState(false)
@@ -177,9 +184,11 @@ export default function AdminDashboard() {
                 return
             }
             closeApplicationModal()
-            setToast(result.emailSent
-                ? { id: Date.now(), text: "Pieteikums apstiprināts. Piekļuves dati nosūtīti e-pastā.", variant: "success" }
-                : { id: Date.now(), text: "Pieteikums apstiprināts, bet e-pastu ar piekļuves datiem neizdevās nosūtīt.", variant: "error" })
+            if (result.emailSent) {
+                setToast({ id: Date.now(), text: "Pieteikums apstiprināts. Piekļuves dati nosūtīti e-pastā.", variant: "success" })
+            } else {
+                setIssuedPassword({ name: applicationEditData.name ?? "", password: result.password })
+            }
             getApplications()
             getTenants()
         } catch (error) {
@@ -214,6 +223,7 @@ export default function AdminDashboard() {
         try {
             const data = await getTenantById(id)
             setTenantViewData(data)
+            setTenantViewId(id)
             setIsTenantModalOpen(true)
         } catch (error) {
             console.error(error)
@@ -249,7 +259,34 @@ export default function AdminDashboard() {
 
     function handleCloseTenantModal() {
         setTenantViewData(null)
+        setTenantViewId(null)
         setIsTenantModalOpen(false)
+        setIsConfirmingPasswordReset(false)
+        setPasswordResetMessage(null)
+    }
+
+    async function handleSendNewPassword() {
+        if (tenantViewId == null) return
+        setIsSendingPassword(true)
+        setPasswordResetMessage(null)
+        try {
+            const result = await sendNewTemporaryPassword(tenantViewId)
+            if (!result.ok) {
+                setPasswordResetMessage(result.error)
+            } else if (result.emailSent) {
+                setPasswordResetMessage("Jaunā pagaidu parole nosūtīta e-pastā.")
+            } else {
+                const name = tenantViewData?.name ?? ""
+                handleCloseTenantModal()
+                setIssuedPassword({ name, password: result.password })
+            }
+        } catch (error) {
+            console.error(error)
+            setPasswordResetMessage("Radās neparedzēta kļūda. Mēģini vēlreiz.")
+        } finally {
+            setIsSendingPassword(false)
+            setIsConfirmingPasswordReset(false)
+        }
     }
 
     const updateEditField = (field: keyof User) => (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -558,6 +595,39 @@ export default function AdminDashboard() {
                         </div>
                     ))}
                 </dl>
+
+                <div className="mt-8 flex flex-col gap-4">
+                    {isConfirmingPasswordReset && (
+                        <p className="text-white/75">Pašreizējā parole vairs nedarbosies. Jaunā pagaidu parole tiks nosūtīta uz iemītnieka e-pastu.</p>
+                    )}
+                    {passwordResetMessage && <p role="status" className="text-white/90">{passwordResetMessage}</p>}
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {isConfirmingPasswordReset && (
+                            <button type="button" onClick={() => setIsConfirmingPasswordReset(false)} className="cursor-pointer rounded-full border border-white/80 py-4 text-lg transition hover:bg-white/10">
+                                Atcelt
+                            </button>
+                        )}
+                        <button
+                            type="button"
+                            onClick={() => isConfirmingPasswordReset ? handleSendNewPassword() : setIsConfirmingPasswordReset(true)}
+                            disabled={isSendingPassword}
+                            className="cursor-pointer rounded-full bg-white py-4 text-lg text-black transition hover:bg-white/85 disabled:opacity-60 sm:col-start-2"
+                        >
+                            {isSendingPassword ? "Sūta..." : isConfirmingPasswordReset ? "Sūtīt" : "Jauna pagaidu parole"}
+                        </button>
+                    </div>
+                </div>
+            </AdminModal>
+
+            {/* Temporary password whose email failed */}
+            <AdminModal isOpen={issuedPassword != null} onClose={() => setIssuedPassword(null)} title="E-pastu neizdevās nosūtīt">
+                <p className="text-lg text-white/75">
+                    {issuedPassword?.name} pagaidu parole ir saglabāta, bet e-pastu neizdevās nosūtīt. Iedod šo paroli iemītniekam personīgi:
+                </p>
+                <p className="mt-6 select-all rounded-2xl bg-white/10 px-6 py-4 text-center font-mono text-2xl tracking-wider">{issuedPassword?.password}</p>
+                <button type="button" onClick={() => setIssuedPassword(null)} className="mt-8 w-full cursor-pointer rounded-full bg-white py-4 text-lg text-black transition hover:bg-white/85">
+                    Gatavs
+                </button>
             </AdminModal>
         </div>
     )

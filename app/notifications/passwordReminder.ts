@@ -54,6 +54,9 @@ export const ensureWeeklyPasswordReminder = async (userId: number) => {
     await replacePasswordReminder(userId, PASSWORD_REMINDER_MESSAGE, [])
 }
 
+// After the admin issues a new temporary password: remind right away and weekly again until it is changed
+export const restartPasswordReminders = (userId: number) => replacePasswordReminder(userId, PASSWORD_REMINDER_MESSAGE, [])
+
 // After a password change: remove the pending reminder and stop sending new ones
 export const stopPasswordReminders = (userId: number) => replacePasswordReminder(userId, PASSWORD_CHANGED_MESSAGE, [userId])
 
