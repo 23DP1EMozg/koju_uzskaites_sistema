@@ -443,13 +443,13 @@ export default function AdminDashboard() {
                 <Pagination page={tenantPages.page} pageCount={tenantPages.pageCount} onChange={tenantPages.setPage} variant="light" />
             </section>
 
-            {/* Overdue cleaning — tenants who skipped laundry or kitchen cleaning for over 3 weeks */}
+            {/* Overdue laundry — tenants who haven't changed their bed linen for over 3 weeks */}
             <section id="kavetaji" className="scroll-mt-24 lg:scroll-mt-32 px-4 pb-16 lg:px-[7.5rem] lg:pb-28">
                 <div className="rounded-[3rem] bg-[url('/backgrounds/redTheme/NotificationContainerRedBg.png')] bg-cover bg-center px-3 py-14 text-white lg:px-16 lg:py-20">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                         <h2 className="text-5xl font-extrabold italic tracking-tight lg:text-[5.5rem] lg:leading-none">Kavētāji</h2>
                         <p className="max-w-[26rem] text-lg text-white/75 lg:mb-[-1.5rem] lg:text-2xl">
-                            Iemītnieki, kas vairāk nekā 3 nedēļas nav tīrījuši veļas telpu vai virtuvi
+                            Iemītnieki, kas vairāk nekā 3 nedēļas nav mainījuši gultas veļu
                         </p>
                     </div>
 
