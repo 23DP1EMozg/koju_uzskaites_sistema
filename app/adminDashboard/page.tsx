@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Inter } from "next/font/google"
 import Modal from "react-modal"
 import { Application } from "../apply/Application"
-import { acceptAndEditApplication, deleteTenant, getAllComplaints, getAllTenants, getOverdueLaundryTenants, getTenantById, notifyOverdueTenant, getUserApplications, rejectApplication } from "./actions"
+import { acceptAndEditApplication, deleteTenant, getAllComplaints, getAllTenants, getOverdueLaundryTenants, getTenantById, notifyOverdueTenant, getUserApplications, getWeekendStays, rejectApplication, setWeekendStayStatus } from "./actions"
 import { User } from "../types/User"
 import ApplicationCard from "./ApplicationCard"
 import TenantCard from "./TenantCard"
@@ -19,6 +19,8 @@ import ConfirmDialog from "./ConfirmDialog"
 import InputField from "../components/InputField"
 import { Complaint } from "../types/Complaint"
 import { OverdueTenant } from "../types/OverdueTenant"
+import { WeekendStay } from "../types/WeekendStay"
+import WeekendStayCard from "./WeekendStayCard"
 
 const inter = Inter({
     subsets: ["latin", "latin-ext"],
@@ -29,6 +31,7 @@ const NAV_ITEMS: NavItem[] = [
     { id: "pieteikumi", label: "Pieteikumi" },
     { id: "iemitnieki", label: "Iemītnieki" },
     { id: "kavetaji", label: "Kavētāji" },
+    { id: "paliksana", label: "Paliekšana" },
     { id: "sudzibas", label: "Sūdzības" },
     { id: "informacija", label: "Informācija" },
     { id: "pasakumi", label: "Pasākumi" },
@@ -70,6 +73,7 @@ export default function AdminDashboard() {
     const [complaints, setComplaints] = useState<Complaint[]>([])
     const [complaintViewData, setComplaintViewData] = useState<Complaint | null>(null)
     const [overdueTenants, setOverdueTenants] = useState<OverdueTenant[]>([])
+    const [weekendStays, setWeekendStays] = useState<WeekendStay[]>([])
 
     const getApplications = async () => {
         try {
@@ -93,6 +97,7 @@ export default function AdminDashboard() {
         getUserApplications().then(setApplications).catch(console.error)
         getAllTenants().then(setTenants).catch(console.error)
         getOverdueLaundryTenants().then(setOverdueTenants).catch(console.error)
+        getWeekendStays().then(setWeekendStays).catch(console.error)
         getAllComplaints()
             .then(comp => setComplaints([...comp].sort((a, b) => (b.created_at ?? "").localeCompare(a.created_at ?? "")))) // newest first
             .catch(console.error)
@@ -351,6 +356,36 @@ export default function AdminDashboard() {
                             ))
                         )}
                     </div>
+                </div>
+            </section>
+
+            {/* Weekend stay requests */}
+            <section id="paliksana" className="scroll-mt-4 px-4 pb-16 lg:px-[7.5rem] lg:pb-28">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                    <h2 className="bg-gradient-to-b from-black from-30% to-[#a23a32] bg-clip-text pr-4 text-6xl font-extrabold italic leading-tight tracking-tight text-transparent lg:text-[8.5rem] lg:leading-none">
+                        Paliekšana
+                    </h2>
+                    <p className="max-w-[26rem] text-lg text-black/60 lg:mb-2 lg:text-2xl">
+                        Iemītnieki, kas vēlas palikt dienesta viesnīcā brīvdienās
+                    </p>
+                </div>
+
+                <div className="mt-10 flex flex-col gap-5 lg:mt-14">
+                    {weekendStays.length === 0 ? (
+                        <p className="text-lg text-black/60">Nav paliekšanas pieteikumu.</p>
+                    ) : (
+                        weekendStays.map(s => (
+                            <WeekendStayCard
+                                stay={s}
+                                tenant={findSender(s.user_id)}
+                                key={s.id}
+                                onDecide={async status => {
+                                    await setWeekendStayStatus(s.id as number, status)
+                                    setWeekendStays(await getWeekendStays())
+                                }}
+                            />
+                        ))
+                    )}
                 </div>
             </section>
 

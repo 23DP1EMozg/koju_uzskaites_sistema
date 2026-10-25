@@ -9,6 +9,7 @@ import { requireAdmin } from "../helper/auth/jwt"
 import { Complaint } from "../types/Complaint"
 import { Notification } from "../types/Notification"
 import { OverdueTenant } from "../types/OverdueTenant"
+import { WeekendStay, WeekendStayStatus } from "../types/WeekendStay"
 
 export const getUserApplications = async () : Promise<Application[]> => {
     await requireAdmin()
@@ -210,4 +211,56 @@ export const getOverdueLaundryTenants = async () : Promise<OverdueTenant[]> => {
 export const notifyOverdueTenant = async (id: number) => {
     await requireAdmin()
     await createNotification({ user_id: id, message: "Jums ir jānodod veļa", category: LAUNDRY_REMINDER_CATEGORY })
+}
+
+// Upcoming and recent weekend stay requests (weekends from last week on), soonest weekend first
+export const getWeekendStays = async () : Promise<WeekendStay[]> => {
+    await requireAdmin()
+    const supabase = await createClient()
+
+    const since = new Date(Date.now() - 7 * 86_400_000)
+        .toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" }) // YYYY-MM-DD
+
+    const { data, error } = await supabase
+    .from("weekend_stay_requests")
+    .select("id, user_id, weekend_date, reason, event_date, reason_text, status, created_at")
+    .gte("weekend_date", since)
+    .order("weekend_date", { ascending: true })
+    .order("created_at", { ascending: true })
+
+    if (error) throw error
+
+    return data
+}
+
+export const setWeekendStayStatus = async (id: number, status: Exclude<WeekendStayStatus, "pending">) => {
+    await requireAdmin()
+    const supabase = await createClient()
+
+    // Only pending requests can be decided, so the stay count is never bumped twice
+    const { data, error } = await supabase
+    .from("weekend_stay_requests")
+    .update({ status })
+    .eq("id", id)
+    .eq("status", "pending")
+    .select("user_id")
+    .maybeSingle()
+
+    if (error) throw error
+    if (!data || status !== "approved") return
+
+    const { data: user, error: userError } = await supabase
+    .from("users")
+    .select("weekend_stay_count")
+    .eq("id", data.user_id)
+    .single()
+
+    if (userError) throw userError
+
+    const { error: updateError } = await supabase
+    .from("users")
+    .update({ weekend_stay_count: (user.weekend_stay_count ?? 0) + 1 })
+    .eq("id", data.user_id)
+
+    if (updateError) throw updateError
 }

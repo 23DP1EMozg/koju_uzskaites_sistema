@@ -1,0 +1,140 @@
+"use client"
+
+import { FormEvent, ReactNode, useCallback, useState, useTransition } from "react";
+import InputField from "../components/InputField";
+import ApplyButton from "../components/ApplyButton";
+import Toast, { ToastMessage } from "../components/Toast";
+import { WEEKEND_STAY_REASONS, formatWeekend, weekendRange } from "../types/WeekendStay";
+import { createWeekendStay } from "./actions";
+
+type Props = {
+    accentColor: string,
+    weekends: string[],
+}
+
+// Same look as InputField, for the select and textarea
+function Field({ id, label, children }: { id: string, label: string, children: ReactNode }) {
+    return (
+        <label
+            htmlFor={id}
+            className="flex flex-col gap-1 rounded-2xl bg-white/10 px-6 pt-4 pb-4 text-white shadow-[0_4px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm transition focus-within:bg-white/15 focus-within:ring-1 focus-within:ring-white/60"
+        >
+            <span className="text-xs tracking-wide text-white/90">{label}</span>
+            <span className="flex items-center gap-2 border-b border-white/80 pb-1">{children}</span>
+        </label>
+    )
+}
+
+const controlClass = "w-full min-w-0 cursor-pointer bg-transparent text-sm text-white outline-none [&>option]:text-black"
+
+export default function StayForm({ accentColor, weekends }: Props) {
+    const empty = { weekendDate: weekends[0], reason: "", eventDate: "", reasonText: "" }
+    const [values, setValues] = useState(empty)
+    const [toast, setToast] = useState<ToastMessage | null>(null)
+    const [isPending, startTransition] = useTransition()
+
+    const closeToast = useCallback(() => setToast(null), [])
+
+    const update = (field: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+        setValues(prev => ({ ...prev, [field]: e.target.value }))
+    }
+
+    // A picked event date may not fit a newly chosen weekend
+    const changeWeekend = (e: React.ChangeEvent<HTMLSelectElement>) => {
+        setValues(prev => ({ ...prev, weekendDate: e.target.value, eventDate: "" }))
+    }
+
+    const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        setToast(null)
+
+        startTransition(async () => {
+            const result = await createWeekendStay(values)
+
+            if (!result.ok) {
+                setToast({ id: Date.now(), text: result.error, variant: "error" })
+                return
+            }
+
+            setValues(empty)
+            setToast({ id: Date.now(), text: "Pieteikums nosūtīts. Administrācija to izskatīs.", variant: "success" })
+        })
+    }
+
+    const range = weekendRange(values.weekendDate)
+
+    return (
+        <>
+            <Toast toast={toast} onClose={closeToast} />
+
+            <form
+                onSubmit={handleSubmit}
+                noValidate
+                className="flex w-full flex-col rounded-[20px] bg-black/45 px-5 pt-5 pb-6 text-white shadow-[0_4px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm md:w-[42%] md:rounded-[28px] md:px-7 md:pt-6 md:pb-7"
+            >
+                <h2 className="text-3xl font-bold italic leading-none md:text-[40px]">Pieteikt paliekšanu</h2>
+                <div className="mt-4 flex gap-4">
+                    <span style={{ background: accentColor }} className="w-1 shrink-0 rounded-full" />
+                    <p className="text-sm leading-snug text-white/85 md:text-[15px]">
+                        Paliekšana brīvdienās jāpiesaka iepriekš, norādot iemeslu. Pieteikumu apstiprina administrācija.
+                    </p>
+                </div>
+
+                <div className="mt-5 flex flex-col gap-3 md:mt-6 md:gap-4">
+                    <Field id="stay_weekend" label="Nedēļas nogale">
+                        <select id="stay_weekend" value={values.weekendDate} onChange={changeWeekend} className={controlClass}>
+                            {weekends.map(weekend => (
+                                <option key={weekend} value={weekend}>{formatWeekend(weekend)}</option>
+                            ))}
+                        </select>
+                    </Field>
+
+                    <Field id="stay_reason" label="Iemesls">
+                        <select id="stay_reason" required value={values.reason} onChange={update("reason")} className={controlClass}>
+                            <option value="" disabled>Izvēlies iemeslu</option>
+                            {Object.entries(WEEKEND_STAY_REASONS).map(([value, label]) => (
+                                <option key={value} value={value}>{label}</option>
+                            ))}
+                        </select>
+                    </Field>
+
+                    {values.reason === "event" && (
+                        <InputField
+                            id="stay_event_date"
+                            label="Pasākuma datums"
+                            type="date"
+                            required
+                            min={range.from}
+                            max={range.to}
+                            value={values.eventDate}
+                            onChange={update("eventDate")}
+                            className="[&_input]:[color-scheme:dark]"
+                        />
+                    )}
+
+                    {values.reason === "other" && (
+                        <Field id="stay_reason_text" label="Apraksti iemeslu">
+                            <textarea
+                                id="stay_reason_text"
+                                required
+                                maxLength={500}
+                                placeholder="Kāpēc paliksi dienesta viesnīcā?"
+                                value={values.reasonText}
+                                onChange={update("reasonText")}
+                                className="h-24 w-full resize-none bg-transparent text-sm text-white outline-none placeholder:text-white/45"
+                            />
+                        </Field>
+                    )}
+                </div>
+
+                <ApplyButton
+                    pending={isPending}
+                    pendingText="Sūta..."
+                    className="mt-6 w-full cursor-pointer md:mt-7"
+                >
+                    Nosūtīt pieteikumu
+                </ApplyButton>
+            </form>
+        </>
+    )
+}
