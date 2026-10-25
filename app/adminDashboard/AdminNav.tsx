@@ -55,13 +55,14 @@ export default function AdminNav({ items, activeId, hasNotifications }: Props) {
                 </Link>
             </div>
 
-            <ul className="hidden flex-1 items-center rounded-full bg-white p-2.5 md:flex lg:max-w-[1200px]">
+            {/* A scrollable bar at the bottom of the screen on phones, inline on wider screens */}
+            <ul className="fixed inset-x-4 bottom-4 z-40 flex items-center overflow-x-auto rounded-full bg-white p-1.5 shadow-[0_4px_14px_rgba(0,0,0,0.25)] [scrollbar-width:none] md:static md:z-auto md:flex-1 md:overflow-visible md:p-2.5 md:shadow-none lg:max-w-[1200px]">
                 {items.map(item => (
-                    <li key={item.id} className="flex-1">
+                    <li key={item.id} className="shrink-0 md:flex-1">
                         <a
                             href={`#${item.id}`}
                             onClick={e => scrollToSection(e, item.id)}
-                            className={`block rounded-full py-2.5 text-center text-xs transition lg:py-3.5 lg:text-[0.95rem] ${
+                            className={`block whitespace-nowrap rounded-full px-4 py-3 text-center text-sm transition md:px-0 md:py-2.5 md:text-xs lg:py-3.5 lg:text-[0.95rem] ${
                                 activeId === item.id
                                     ? "bg-[#a23a32] text-white"
                                     : "text-neutral-600 hover:text-black"
@@ -73,9 +74,12 @@ export default function AdminNav({ items, activeId, hasNotifications }: Props) {
                 ))}
             </ul>
 
-            <button
-                type="button"
-                aria-label="Paziņojumi"
+            {/* The dot means new applications are waiting, so the bell leads to them */}
+            <a
+                href={`#${items[0].id}`}
+                onClick={e => scrollToSection(e, items[0].id)}
+                aria-label={hasNotifications ? "Jauni pieteikumi" : "Pieteikumi"}
+                title={hasNotifications ? "Jauni pieteikumi" : "Nav jaunu pieteikumu"}
                 className="relative grid size-12 shrink-0 place-items-center rounded-full bg-[#a23a32] text-white shadow-lg transition hover:bg-[#8a2f29] lg:size-[4.9rem]"
             >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-5 lg:size-[1.7rem]">
@@ -85,7 +89,7 @@ export default function AdminNav({ items, activeId, hasNotifications }: Props) {
                 {hasNotifications && (
                     <span className="absolute top-2.5 right-2.5 size-2 rounded-full bg-white lg:top-4 lg:right-4 lg:size-3" />
                 )}
-            </button>
+            </a>
         </nav>
     )
 }

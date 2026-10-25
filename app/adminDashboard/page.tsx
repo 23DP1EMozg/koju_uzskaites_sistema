@@ -23,6 +23,8 @@ import { Complaint } from "../types/Complaint"
 import { OverdueTenant } from "../types/OverdueTenant"
 import { WeekendStay } from "../types/WeekendStay"
 import WeekendStayCard from "./WeekendStayCard"
+import InfoSection from "./InfoSection"
+import EventsSection from "./EventsSection"
 
 const inter = Inter({
     subsets: ["latin", "latin-ext"],
@@ -135,6 +137,7 @@ export default function AdminDashboard() {
     }
 
     const closeToast = useCallback(() => setToast(null), [])
+    const showToast = useCallback((text: string, variant: ToastMessage["variant"]) => setToast({ id: Date.now(), text, variant }), [])
 
     const editFields = (u: User): TenantFields => ({
         name: u.name ?? "",
@@ -349,7 +352,7 @@ export default function AdminDashboard() {
                         type="search"
                         value={tenantSearch}
                         onChange={e => { setTenantSearch(e.target.value); tenantPages.setPage(1) }}
-                        placeholder="Meklēt pēc vārda vai istabas"
+                        placeholder="Meklēt pēc vārda, istabas vai kursa"
                         aria-label="Meklēt iemītniekus"
                         className="w-full rounded-full border border-black px-6 py-4 text-lg outline-none transition focus:ring-2 focus:ring-[#a23a32] lg:mb-2 lg:max-w-[600px] lg:py-5"
                     />
@@ -468,7 +471,12 @@ export default function AdminDashboard() {
                 )}
             </section>
 
-            <footer className="mt-5 h-24 rounded-t-[3rem] bg-black lg:h-32" />
+            <InfoSection showToast={showToast} />
+
+            <EventsSection showToast={showToast} requestConfirm={setPendingConfirm} />
+
+            {/* Bottom padding on phones keeps the last section clear of the fixed section bar */}
+            <footer className="mt-5 h-28 rounded-t-[3rem] bg-black lg:h-32" />
 
             {/* Accept & edit application */}
             <AdminModal isOpen={isApplicationModalOpen} onClose={closeApplicationModal} title="Apstiprināt pieteikumu">

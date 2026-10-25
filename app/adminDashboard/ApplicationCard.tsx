@@ -18,7 +18,7 @@ function Detail({ label, value }: { label: string, value: string }) {
 export default function ApplicationCard({ onAccept, onReject, data }: Props) {
     return (
         <article className="flex flex-col gap-6 rounded-[28px] border border-[#a23a32]/40 bg-[linear-gradient(155deg,#141414_0%,#151111_45%,#3a1210_75%,#a23a32_110%)] p-6 lg:p-11">
-            <h3 className="text-3xl font-extrabold italic leading-tight tracking-tight text-white lg:text-[2.6rem]">
+            <h3 className="text-3xl font-extrabold italic leading-tight tracking-tight break-words text-white lg:text-[2.6rem]">
                 {data.name}
             </h3>
 

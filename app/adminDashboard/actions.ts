@@ -1,5 +1,6 @@
 "use server"
 import { randomInt } from "crypto"
+import { ANNOUNCEMENT_CATEGORY, validateAnnouncement } from "./announcement"
 import { Application } from "../apply/Application"
 import { createClient } from "../lib/supabase/server"
 import { Role } from "../types/Role"
@@ -152,7 +153,7 @@ export const getAllTenants = async () => {
 
     const { data, error } = await supabase
     .from("users")
-    .select("id, room_number, name ")
+    .select("id, room_number, name, course")
     .not("course", "is", null)
 
     if (error) {
@@ -230,6 +231,21 @@ export const createNotification = async ({user_id, message, category} : Notifica
     ])
 
     if (error) throw error
+}
+
+// Broadcast (user_id -1) shown to every tenant; returns a result since thrown errors are hidden in production
+export const sendAnnouncement = async (message: string): Promise<{ ok: true } | { ok: false, error: string }> => {
+    await requireAdmin()
+    const validationError = validateAnnouncement(message)
+    if (validationError) return { ok: false, error: validationError }
+
+    try {
+        await createNotification({ user_id: -1, message: message.trim(), category: ANNOUNCEMENT_CATEGORY }, true)
+        return { ok: true }
+    } catch (error) {
+        console.error(error)
+        return { ok: false, error: "Neizdevās nosūtīt paziņojumu. Mēģini vēlreiz." }
+    }
 }
 
 // Matches the "vairāk nekā 3 nedēļas" text in the admin Kavētāji section
