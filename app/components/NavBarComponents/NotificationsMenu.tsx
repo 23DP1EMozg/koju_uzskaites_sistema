@@ -1,11 +1,13 @@
 'use client'
 import NavBarCornerButton from "./NavBarCornerButton";
 import {useCallback, useEffect, useRef, useState} from "react";
+import Link from "next/link";
 import {Notification} from "@/app/types/Notification";
-import {getMyNotifications, markMyNotificationAsRead} from "@/app/notifications/actions";
+import {AdminAlert, getAdminAlerts, getMyNotifications, markMyNotificationAsRead} from "@/app/notifications/actions";
 
 type NotificationsMenuProps = {
     accentColor: string;
+    isAdmin?: boolean;
 };
 
 const formatDate = (value?: string) => {
@@ -14,28 +16,36 @@ const formatDate = (value?: string) => {
     return `${String(date.getDate()).padStart(2, '0')}/${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`
 }
 
-export default function NotificationsMenu({accentColor}: NotificationsMenuProps) {
+export default function NotificationsMenu({accentColor, isAdmin = false}: NotificationsMenuProps) {
     const [open, setOpen] = useState(false)
     const [notifications, setNotifications] = useState<Notification[]>([])
+    // Admins also see the work waiting in the admin dashboard
+    const [alerts, setAlerts] = useState<AdminAlert[]>([])
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState(false)
     const containerRef = useRef<HTMLDivElement>(null)
 
-    const loadNotifications = useCallback(() => getMyNotifications()
-        .then((data) => {
+    const loadNotifications = useCallback(() => Promise.all([getMyNotifications(), isAdmin ? getAdminAlerts() : []])
+        .then(([data, adminAlerts]) => {
             setNotifications(data)
+            setAlerts(adminAlerts)
             setError(false)
         })
         .catch(() => setError(true))
-        .finally(() => setLoading(false)), [])
+        .finally(() => setLoading(false)), [isAdmin])
 
     // Load once for the unread dot, then refresh every time the panel is opened
     useEffect(() => {
-        getMyNotifications()
-            .then(setNotifications)
+        Promise.all([getMyNotifications(), isAdmin ? getAdminAlerts() : []])
+            .then(([data, adminAlerts]) => {
+                setNotifications(data)
+                setAlerts(adminAlerts)
+            })
             .catch(() => setError(true))
             .finally(() => setLoading(false))
-    }, [])
+    }, [isAdmin])
+
+    const count = alerts.length + notifications.length
 
     useEffect(() => {
         if (!open) return
@@ -73,7 +83,7 @@ export default function NotificationsMenu({accentColor}: NotificationsMenuProps)
     return (
         <div ref={containerRef} className={"relative h-full"}>
             <NavBarCornerButton iconRoute="/icons/notificationIcon.svg" accentColor={accentColor} label="Paziņojumi" onClick={toggle}/>
-            {notifications.length > 0 &&
+            {count > 0 &&
                 <span className={"pointer-events-none absolute top-[18%] right-[18%] size-2 md:size-2.5 rounded-full bg-white"} style={{boxShadow: `0 0 0 2px ${accentColor}`}}/>}
 
             {open &&
@@ -81,7 +91,7 @@ export default function NotificationsMenu({accentColor}: NotificationsMenuProps)
                     <div className={"flex flex-row items-center justify-between w-full pr-2"}>
                         <p className={"text-3xl md:text-[34px] font-bold italic leading-none"}>Paziņojumi</p>
                         <span style={{backgroundColor: accentColor}} className={"min-w-8 h-8 px-2 grid place-items-center rounded-full text-white text-sm font-semibold"}>
-                            {notifications.length}
+                            {count}
                         </span>
                     </div>
 
@@ -89,8 +99,21 @@ export default function NotificationsMenu({accentColor}: NotificationsMenuProps)
                         {loading && <p className={"text-[15px] text-neutral-500"}>Ielādē...</p>}
                         {!loading && error &&
                             <p className={"text-[15px] text-[#c4473d]"}>Neizdevās ielādēt paziņojumus. Mēģini vēlreiz.</p>}
-                        {!loading && !error && notifications.length === 0 &&
+                        {!loading && !error && count === 0 &&
                             <p className={"text-[15px] text-neutral-500"}>Tev nav jaunu paziņojumu.</p>}
+
+                        {alerts.map((alert) => (
+                            <div key={alert.id} className={"flex flex-row gap-4"}>
+                                <span style={{background: accentColor}} className={"w-1 shrink-0 rounded-full"}/>
+                                <div className={"flex flex-col gap-1.5 flex-1 min-w-0"}>
+                                    <span className={"text-xs text-neutral-500 font-semibold uppercase tracking-wide truncate"}>{alert.category}</span>
+                                    <p className={"text-[15px] leading-[1.25] break-words"}>{alert.message}</p>
+                                    <Link href={alert.href} className={"self-start text-[13px] font-medium text-neutral-600 underline underline-offset-2 hover:text-black"}>
+                                        Atvērt
+                                    </Link>
+                                </div>
+                            </div>
+                        ))}
 
                         {notifications.map((notification) => (
                             <div key={notification.id} className={"flex flex-row gap-4"}>

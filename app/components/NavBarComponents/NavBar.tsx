@@ -80,7 +80,7 @@ export default function NavBar({accentColor, isAdmin = false}: NavBarProps) {
                     </li>
                 ))}
             </ul>
-            <NotificationsMenu accentColor={accentColor}/>
+            <NotificationsMenu accentColor={accentColor} isAdmin={isAdmin}/>
         </nav>
     )
 }

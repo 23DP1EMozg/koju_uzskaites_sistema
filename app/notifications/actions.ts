@@ -1,5 +1,7 @@
 "use server"
 import { getCurrentUser } from "../helper/auth/jwt"
+import { createClient } from "../lib/supabase/server"
+import { Role } from "../types/Role"
 import { getUsersNotifications, MarkNotificationAsRead } from "./reminders"
 import { Notification } from "../types/Notification"
 import { ensureWeeklyPasswordReminder, markPasswordReminderAsRead, PASSWORD_REMINDER_CATEGORY } from "./passwordReminder"
@@ -49,4 +51,61 @@ export const markMyNotificationAsRead = async (notificationId: number) => {
     }
 
     await MarkNotificationAsRead(notificationId, user.id)
+}
+
+export type AdminAlert = {
+    id: string,
+    category: string,
+    message: string,
+    href: string,
+}
+
+// Latvian counts: 1, 21, 31... take the singular, everything else (including 11) the plural
+const plural = (count: number, one: string, many: string) =>
+    count % 10 === 1 && count % 100 !== 11 ? one : many
+
+// Work waiting for admins, shown on top of their notifications; an alert goes away once the work is done
+export const getAdminAlerts = async (): Promise<AdminAlert[]> => {
+    const user = await getCurrentUser()
+    if (user?.role !== Role.ADMIN) return []
+
+    const supabase = await createClient()
+    const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" })
+    const weekAgo = new Date(Date.now() - 7 * 86_400_000).toISOString()
+
+    const [applications, stays, complaints] = await Promise.all([
+        // Applications have no course or password until they are accepted
+        supabase.from("users").select("id", { count: "exact", head: true }).is("course", null).is("password", null),
+        supabase.from("weekend_stay_requests").select("id", { count: "exact", head: true }).eq("status", "pending").gte("weekend_date", today),
+        supabase.from("complaints").select("id", { count: "exact", head: true }).gte("created_at", weekAgo),
+    ])
+
+    const error = applications.error ?? stays.error ?? complaints.error
+    if (error) throw error
+
+    const applicationCount = applications.count ?? 0
+    const stayCount = stays.count ?? 0
+    const complaintCount = complaints.count ?? 0
+    const alerts: AdminAlert[] = []
+
+    if (applicationCount > 0) alerts.push({
+        id: "applications",
+        category: "Pieteikumi",
+        message: `${applicationCount} ${plural(applicationCount, "jauns pieteikums gaida", "jauni pieteikumi gaida")} apstiprinājumu.`,
+        href: "/adminDashboard#pieteikumi",
+    })
+    if (stayCount > 0) alerts.push({
+        id: "stays",
+        category: "Palikšana",
+        message: `${stayCount} ${plural(stayCount, "palikšanas pieteikums gaida", "palikšanas pieteikumi gaida")} lēmumu.`,
+        href: "/adminDashboard#paliksana",
+    })
+    if (complaintCount > 0) alerts.push({
+        id: "complaints",
+        category: "Sūdzības",
+        message: `${complaintCount} ${plural(complaintCount, "jauna sūdzība", "jaunas sūdzības")} pēdējās 7 dienās.`,
+        href: "/adminDashboard#sudzibas",
+    })
+
+    return alerts
 }
