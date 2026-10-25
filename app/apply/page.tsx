@@ -1,27 +1,33 @@
 "use client";
 
-import { FormEvent, useState, useTransition } from "react";
+import { FormEvent, useCallback, useState, useTransition } from "react";
 import Image from "next/image";
 import { Inter } from "next/font/google";
 import { Application } from "./Application";
 import { apply } from "./actions";
 import InputField from "../components/InputField";
 import ApplyButton from "../components/ApplyButton";
+import Toast, { ToastMessage } from "../components/Toast";
 
 const inter = Inter({
     subsets: ["latin", "latin-ext"],
     weight: ["300", "400"],
 })
 
+const EMPTY_APPLICATION: Application = {
+    id: null,
+    name: "",
+    social_security_number: "",
+    email: "",
+    phone_number: ""
+}
+
 export default function Apply() {
-    const [data, setData] = useState<Application>({
-        id: null,
-        name: "",
-        social_security_number: "",
-        email: "",
-        phone_number: ""
-    })
+    const [data, setData] = useState<Application>(EMPTY_APPLICATION)
+    const [toast, setToast] = useState<ToastMessage | null>(null)
     const [isPending, startTransition] = useTransition()
+
+    const closeToast = useCallback(() => setToast(null), [])
 
     const update = (field: keyof Omit<Application, "id">) => (e: React.ChangeEvent<HTMLInputElement>) => {
         setData(prev => ({
@@ -32,7 +38,19 @@ export default function Apply() {
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
-        startTransition(() => apply(data))
+        setToast(null)
+
+        startTransition(async () => {
+            const result = await apply(data)
+
+            if (!result.ok) {
+                setToast({ id: Date.now(), text: result.error, variant: "error" })
+                return
+            }
+
+            setData(EMPTY_APPLICATION)
+            setToast({ id: Date.now(), text: "Pieteikums nosūtīts! Administrācija to izskatīs un sazināsies ar tevi.", variant: "success" })
+        })
     }
 
     return(
@@ -45,6 +63,8 @@ export default function Apply() {
                 sizes="100vw"
                 className="object-cover"
             />
+
+            <Toast toast={toast} onClose={closeToast} />
 
             <form
                 onSubmit={handleSubmit}

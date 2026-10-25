@@ -3,59 +3,64 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "../lib/supabase/server";
 import { Application } from "./Application";
-import { User } from "../types/User";
 
-export const apply = async (inputData?: Application) => {
+type ApplyResult = { ok: true } | { ok: false, error: string }
+
+const GENERIC_ERROR = "Neizdevās nosūtīt pieteikumu. Mēģini vēlreiz."
+
+export const apply = async (inputData?: Application): Promise<ApplyResult> => {
+    if (!inputData?.name.trim() || !inputData.phone_number.trim()) {
+        return { ok: false, error: "Lūdzu, aizpildi visus laukus." }
+    }
+
+    const isValidSocialSecurityNumber = /^\d{6}-\d{5}$/.test(inputData.social_security_number)
+
+    if (!isValidSocialSecurityNumber) {
+        return { ok: false, error: "Personas kodam jābūt formātā 000000-00000." }
+    }
+
+    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inputData.email)
+
+    if (!isValidEmail) {
+        return { ok: false, error: "Lūdzu, ievadi derīgu e-pasta adresi." }
+    }
+
     const supabase = await createClient()
 
     const {data, error} = await supabase
     .from("users")
     .select("id")
-    .eq("social_security_number", inputData?.social_security_number)
+    .eq("social_security_number", inputData.social_security_number)
     .maybeSingle()
 
-    if(error) {
+    if (error) {
         console.error(error)
-        return
+        return { ok: false, error: GENERIC_ERROR }
     }
 
     if (data != null) {
-        console.log("user already applied")
-        return
+        return { ok: false, error: "Pieteikums ar šo personas kodu jau ir iesniegts." }
     }
 
-    const isValidSocialSecurityNumber = /^\d{6}-\d{5}$/.test(inputData?.social_security_number as string);
-
-    if(!isValidSocialSecurityNumber) {
-        console.log("invalid social security number")
-        return
-    }
-
-    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inputData?.email as string)
-
-    if(!isValidEmail) {
-        console.log("invalid email")
-        return
-    }
-
-    await saveApplication(supabase, inputData as Application)
+    return saveApplication(supabase, inputData)
 }
 
-export const saveApplication =  async (
+export const saveApplication = async (
     supabase: SupabaseClient, application: Application
-) => {
+): Promise<ApplyResult> => {
 
     const { id, ...userData } = application;
 
-    const {data, error} = await supabase
+    const { error } = await supabase
     .from("users")
     .insert([
-        userData        
+        userData
     ])
-    
+
     if (error) {
         console.error(error)
-        return
+        return { ok: false, error: GENERIC_ERROR }
     }
-    console.log("application saved!")
+
+    return { ok: true }
 }
