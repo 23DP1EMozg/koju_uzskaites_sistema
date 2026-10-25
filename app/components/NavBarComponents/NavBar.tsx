@@ -19,9 +19,9 @@ type NavItem = {
 
 const items: NavItem[] = [
     {text: 'Profils', iconRoute: '/icons/navProfileIcon.svg', sectionId: 'DashboardSection'},
-    {text: 'Sūdzības', iconRoute: '/icons/navComplaintIcon.svg', sectionId: 'ReportSection'},
-    {text: 'Informācija', iconRoute: '/icons/navInfoIcon.svg', sectionId: 'FAQSection'},
     {text: 'Pasākumi', iconRoute: '/icons/navEventIcon.svg', sectionId: 'EventSection'},
+    {text: 'Informācija', iconRoute: '/icons/navInfoIcon.svg', sectionId: 'FAQSection'},
+    {text: 'Sūdzības', iconRoute: '/icons/navComplaintIcon.svg', sectionId: 'ReportSection'},
 ]
 
 export default function NavBar({accentColor, isAdmin = false}: NavBarProps) {
