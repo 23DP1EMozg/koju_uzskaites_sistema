@@ -1,5 +1,3 @@
-import BulletBtn from "@/app/components/BulletBtn";
-
 export type NotificationEvent = {
     id?: number
     title: string
@@ -24,10 +22,7 @@ type NotificationEventCardProps = {
 export default function EventCard ({heading, event, bgImage, slideCount, activeSlide, slideDuration, onSlideChange, onSlideEnd, onSignUp, signUpPending}: NotificationEventCardProps) {
     return (
         <div style={{backgroundImage: `url('${bgImage}')`}} className="w-[calc(100%-32px)] md:w-[73%] min-h-128 flex flex-col rounded-[24px] md:rounded-[32px] bg-cover bg-center text-white pt-6 md:pt-9 pl-6 md:pl-14 pr-5 md:pr-10 pb-5 md:pb-6">
-            <div className={`flex flex-row items-start justify-between w-full`}>
-                <h2 className={`text-4xl md:text-[50px] font-bold italic leading-none pt-2`}>{heading}</h2>
-                <BulletBtn color={"#FFFFFF"} size={"size-11 md:size-14"}/>
-            </div>
+            <h2 className={`text-4xl md:text-[50px] font-bold italic leading-none pt-2`}>{heading}</h2>
             <div key={activeSlide} className={`flex flex-col w-full animate-slide-reveal motion-reduce:animate-none`}>
                 <div className={`flex flex-col md:flex-row md:items-baseline justify-between gap-1 md:gap-2 w-full mt-12 md:mt-9`}>
                     <p className={`text-2xl md:text-4xl leading-none`}>{event.title}</p>
