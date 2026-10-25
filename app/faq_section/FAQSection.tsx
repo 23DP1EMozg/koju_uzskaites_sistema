@@ -41,7 +41,7 @@ export default function FAQSection({cardBg, headingBg}: FAQSectionProps) {
                     {renderCards(faqItems.slice(0, LEFT_COLUMN_COUNT), 0)}
                 </div>
                 <div className="contents md:flex flex-col items-end w-[42%] gap-7">
-                    <h2 style={{backgroundImage: `url('${headingBg}')`}} className={`order-first md:order-none w-full md:text-right text-[120px] md:text-[270px] font-black leading-[0.8] tracking-tight bg-cover bg-center bg-clip-text text-transparent mb-4 md:mb-24`}>FAQ</h2>
+                    <h2 style={{backgroundImage: `url('${headingBg}')`}} className={`order-first md:order-none w-full md:text-right text-[120px] md:text-[min(270px,15vw)] font-black leading-[0.8] tracking-tight bg-cover bg-center bg-clip-text text-transparent mb-4 md:mb-24`}>FAQ</h2>
                     {renderCards(faqItems.slice(LEFT_COLUMN_COUNT), LEFT_COLUMN_COUNT)}
                 </div>
             </div>
