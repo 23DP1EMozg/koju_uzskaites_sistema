@@ -41,14 +41,14 @@ export const acceptAndEditApplication = async (u: User): Promise<AcceptApplicati
     await requireAdmin()
 
     const fields = {
-        name: u.name ?? "",
-        social_security_number: u.social_security_number ?? "",
-        course: u.course ?? "",
-        room_number: u.room_number,
-        phone_number: u.phone_number ?? "",
-        email: u.email ?? "",
+        name: u?.name ?? "",
+        social_security_number: u?.social_security_number ?? "",
+        course: u?.course ?? "",
+        room_number: u?.room_number,
+        phone_number: u?.phone_number ?? "",
+        email: u?.email ?? "",
     }
-    if (!Number.isInteger(u.id)) return { ok: false, error: "Pieteikums nav atrasts." }
+    if (!Number.isInteger(u?.id)) return { ok: false, error: "Pieteikums nav atrasts." }
     const validationError = firstError(validateTenant(fields))
     if (validationError) return { ok: false, error: validationError }
 

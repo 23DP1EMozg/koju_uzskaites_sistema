@@ -250,7 +250,7 @@ export default function AdminDashboard() {
         const value = field === "room_number"
             ? (digits === "" ? undefined : parseInt(digits))
             : field === "course" ? e.target.value.toUpperCase()
-            : field === "social_security_number" ? formatSocialSecurityNumber(e.target.value)
+            : field === "social_security_number" ? formatSocialSecurityNumber(e.target.value, applicationEditData.social_security_number)
             : e.target.value
         setApplicationEditData(prev => ({ ...prev, [field]: value }))
         setEditErrors(prev => ({ ...prev, [field]: undefined }))

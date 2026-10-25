@@ -83,7 +83,7 @@ export default function Login() {
                         autoFocus
                         maxLength={12}
                         value={socialSecurityNumber}
-                        onChange={e => { setSocialSecurityNumber(formatSocialSecurityNumber(e.target.value)); setErrors(prev => ({ ...prev, socialSecurityNumber: undefined })) }}
+                        onChange={e => { setSocialSecurityNumber(prev => formatSocialSecurityNumber(e.target.value, prev)); setErrors(prev => ({ ...prev, socialSecurityNumber: undefined })) }}
                         error={errors.socialSecurityNumber}
                     />
                     <InputField

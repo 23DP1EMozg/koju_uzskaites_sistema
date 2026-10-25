@@ -34,7 +34,7 @@ export default function Apply() {
     const update = (field: keyof Omit<Application, "id">) => (e: React.ChangeEvent<HTMLInputElement>) => {
         setData(prev => ({
             ...prev,
-            [field]: field === "social_security_number" ? formatSocialSecurityNumber(e.target.value) : e.target.value
+            [field]: field === "social_security_number" ? formatSocialSecurityNumber(e.target.value, prev.social_security_number) : e.target.value
         }))
         setErrors(prev => ({ ...prev, [field]: undefined }))
     }

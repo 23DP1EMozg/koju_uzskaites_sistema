@@ -14,7 +14,9 @@ export type CreateWeekendStayResult =
     | { ok: false, error: string }
 
 // Returns a result instead of throwing: errors thrown from server actions are hidden in production
-export const createWeekendStay = async ({ weekendDate, reason, eventDate, reasonText }: WeekendStayInput): Promise<CreateWeekendStayResult> => {
+export const createWeekendStay = async (input: WeekendStayInput): Promise<CreateWeekendStayResult> => {
+    const { weekendDate, reason, eventDate, reasonText } = input ?? {}
+
     // The user id always comes from the session, never from the client
     const user = await getCurrentUser()
     if (!user) return { ok: false, error: "Sesija ir beigusies. Ienāc vēlreiz." }
