@@ -338,14 +338,36 @@ export const createNotification = async ({user_id, message, category} : Notifica
     if (error) throw error
 }
 
-// Broadcast (user_id -1) shown to every tenant; returns a result since thrown errors are hidden in production
+// One copy per tenant: reminders.user_id must point to a real user, so a single broadcast row (user_id -1)
+// is rejected by the database. Returns a result since thrown errors are hidden in production
 export const sendAnnouncement = async (message: string): Promise<{ ok: true } | { ok: false, error: string }> => {
     await requireAdmin()
     const validationError = validateAnnouncement(message)
     if (validationError) return { ok: false, error: validationError }
 
     try {
-        await createNotification({ user_id: -1, message: message.trim(), category: ANNOUNCEMENT_CATEGORY }, true)
+        const supabase = await createClient()
+
+        // Approved tenants only: applications have no password yet, admins have no course
+        const { data: tenants, error: tenantsError } = await supabase
+        .from("users")
+        .select("id")
+        .not("course", "is", null)
+        .not("password", "is", null)
+
+        if (tenantsError) throw tenantsError
+        if (tenants.length === 0) return { ok: false, error: "Sistēmā nav neviena iemītnieka." }
+
+        const { error } = await supabase
+        .from("reminders")
+        .insert(tenants.map(tenant => ({
+            user_id: tenant.id,
+            message: message.trim(),
+            category: ANNOUNCEMENT_CATEGORY,
+            read_by: [],
+        })))
+
+        if (error) throw error
         return { ok: true }
     } catch (error) {
         console.error(error)
