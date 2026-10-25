@@ -47,6 +47,7 @@ type PendingConfirm = {
 const APPLICATIONS_PER_PAGE = 4
 const TENANTS_PER_PAGE = 8
 const COMPLAINTS_PER_PAGE = 5
+const WEEKEND_STAYS_PER_PAGE = 5
 
 const EMPTY_EDIT_DATA: User = {
     id: 0,
@@ -232,6 +233,7 @@ export default function AdminDashboard() {
     const applicationPages = usePagination(applications, APPLICATIONS_PER_PAGE)
     const tenantPages = usePagination(filteredTenants, TENANTS_PER_PAGE)
     const complaintPages = usePagination(complaints, COMPLAINTS_PER_PAGE)
+    const weekendStayPages = usePagination(weekendStays, WEEKEND_STAYS_PER_PAGE)
 
     return (
         <div className={`${inter.className} min-h-dvh bg-white`}>
@@ -374,7 +376,7 @@ export default function AdminDashboard() {
                     {weekendStays.length === 0 ? (
                         <p className="text-lg text-black/60">Nav palikšanas pieteikumu.</p>
                     ) : (
-                        weekendStays.map(s => (
+                        weekendStayPages.pageItems.map(s => (
                             <WeekendStayCard
                                 stay={s}
                                 tenant={findSender(s.user_id)}
@@ -387,6 +389,7 @@ export default function AdminDashboard() {
                         ))
                     )}
                 </div>
+                <Pagination page={weekendStayPages.page} pageCount={weekendStayPages.pageCount} onChange={weekendStayPages.setPage} variant="light" />
             </section>
 
             {/* Complaints submitted by tenants */}
