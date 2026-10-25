@@ -177,7 +177,9 @@ export default function AdminDashboard() {
                 return
             }
             closeApplicationModal()
-            setToast({ id: Date.now(), text: "Pieteikums apstiprināts. Piekļuves dati nosūtīti e-pastā.", variant: "success" })
+            setToast(result.emailSent
+                ? { id: Date.now(), text: "Pieteikums apstiprināts. Piekļuves dati nosūtīti e-pastā.", variant: "success" }
+                : { id: Date.now(), text: "Pieteikums apstiprināts, bet e-pastu ar piekļuves datiem neizdevās nosūtīt.", variant: "error" })
             getApplications()
             getTenants()
         } catch (error) {
@@ -194,6 +196,7 @@ export default function AdminDashboard() {
             getApplications()
         } catch (error) {
             console.error(error)
+            showToast("Neizdevās noraidīt pieteikumu. Mēģini vēlreiz.", "error")
         }
     }
 
@@ -203,6 +206,7 @@ export default function AdminDashboard() {
             getTenants()
         } catch (error) {
             console.error(error)
+            showToast("Neizdevās dzēst iemītnieku. Mēģini vēlreiz.", "error")
         }
     }
 
@@ -213,6 +217,7 @@ export default function AdminDashboard() {
             setIsTenantModalOpen(true)
         } catch (error) {
             console.error(error)
+            showToast("Neizdevās ielādēt iemītnieka datus. Mēģini vēlreiz.", "error")
         }
     }
 
@@ -396,7 +401,10 @@ export default function AdminDashboard() {
                                 <OverdueTenantCard
                                     tenant={t}
                                     key={t.id}
-                                    onNotify={() => notifyOverdueTenant(t.id)}
+                                    onNotify={() => notifyOverdueTenant(t.id).catch(error => {
+                                        showToast("Neizdevās nosūtīt atgādinājumu. Mēģini vēlreiz.", "error")
+                                        throw error
+                                    })}
                                 />
                             ))
                         )}
@@ -425,8 +433,13 @@ export default function AdminDashboard() {
                                 tenant={findSender(s.user_id)}
                                 key={s.id}
                                 onDecide={async status => {
-                                    await setWeekendStayStatus(s.id as number, status)
-                                    setWeekendStays(await getWeekendStays())
+                                    try {
+                                        await setWeekendStayStatus(s.id as number, status)
+                                        setWeekendStays(await getWeekendStays())
+                                    } catch (error) {
+                                        showToast("Neizdevās saglabāt lēmumu. Mēģini vēlreiz.", "error")
+                                        throw error
+                                    }
                                 }}
                             />
                         ))

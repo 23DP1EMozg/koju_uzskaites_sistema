@@ -43,7 +43,7 @@ const generateTemporaryPassword = () =>
     Array.from({ length: TEMPORARY_PASSWORD_LENGTH }, () => PASSWORD_ALPHABET[randomInt(PASSWORD_ALPHABET.length)]).join("")
 
 export type AcceptApplicationResult =
-    | { ok: true }
+    | { ok: true, emailSent: boolean }
     | { ok: false, error: string }
 
 export const acceptAndEditApplication = async (u: User): Promise<AcceptApplicationResult> => {
@@ -127,7 +127,7 @@ export const acceptAndEditApplication = async (u: User): Promise<AcceptApplicati
         console.error(result.error)
     }
 
-    return { ok: true }
+    return { ok: true, emailSent: result.success }
 }
 
 export const rejectApplication = async (id: number) => {
