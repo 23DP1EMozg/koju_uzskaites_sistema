@@ -19,7 +19,7 @@ type NavItem = {
 
 const items: NavItem[] = [
     {text: 'Profils', iconRoute: '/icons/navProfileIcon.svg', sectionId: 'DashboardSection'},
-    {text: 'Sudzības', iconRoute: '/icons/navComplaintIcon.svg', sectionId: 'ReportSection'},
+    {text: 'Sūdzības', iconRoute: '/icons/navComplaintIcon.svg', sectionId: 'ReportSection'},
     {text: 'Informācija', iconRoute: '/icons/navInfoIcon.svg', sectionId: 'FAQSection'},
     {text: 'Pasākumi', iconRoute: '/icons/navEventIcon.svg', sectionId: 'EventSection'},
 ]
