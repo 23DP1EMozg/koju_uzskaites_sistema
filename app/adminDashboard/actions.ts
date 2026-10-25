@@ -1,4 +1,5 @@
 "use server"
+import { randomInt } from "crypto"
 import { Application } from "../apply/Application"
 import { createClient } from "../lib/supabase/server"
 import { Role } from "../types/Role"
@@ -33,6 +34,13 @@ export const getUserApplications = async () : Promise<Application[]> => {
 }
 
 
+// No look-alike characters (0/O, 1/l/I), since the password is typed from an email
+const PASSWORD_ALPHABET = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+const TEMPORARY_PASSWORD_LENGTH = 10
+
+const generateTemporaryPassword = () =>
+    Array.from({ length: TEMPORARY_PASSWORD_LENGTH }, () => PASSWORD_ALPHABET[randomInt(PASSWORD_ALPHABET.length)]).join("")
+
 export type AcceptApplicationResult =
     | { ok: true }
     | { ok: false, error: string }
@@ -54,8 +62,22 @@ export const acceptAndEditApplication = async (u: User): Promise<AcceptApplicati
 
     const supabase = await createClient()
 
-    const generatedPassword = Math.floor(100000 + Math.random() * 900000).toString()
-    const hashedPassword = await hashPassword(generatedPassword.toString())
+    // The personal code is the login, so it must stay unique even after the admin edits it
+    const { data: duplicate, error: duplicateError } = await supabase
+    .from("users")
+    .select("id")
+    .eq("social_security_number", fields.social_security_number.trim())
+    .neq("id", u.id)
+    .limit(1)
+
+    if (duplicateError) {
+        console.error(duplicateError)
+        return { ok: false, error: "Neizdevās saglabāt pieteikumu. Mēģini vēlreiz." }
+    }
+    if (duplicate.length > 0) return { ok: false, error: "Lietotājs ar šo personas kodu jau eksistē." }
+
+    const generatedPassword = generateTemporaryPassword()
+    const hashedPassword = await hashPassword(generatedPassword)
 
 
     const { data: accepted, error } = await supabase

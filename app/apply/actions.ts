@@ -29,19 +29,22 @@ export const apply = async (inputData?: Application): Promise<ApplyResult> => {
 
     const supabase = await createClient()
 
-    const {data, error} = await supabase
-    .from("users")
-    .select("id")
-    .eq("social_security_number", application.social_security_number)
-    .maybeSingle()
+    const [ssnMatch, emailMatch] = await Promise.all([
+        supabase.from("users").select("id").eq("social_security_number", application.social_security_number).limit(1),
+        // Case-insensitive, with LIKE wildcards escaped so they match literally
+        supabase.from("users").select("id").ilike("email", application.email.replace(/[\\%_]/g, "\\$&")).limit(1),
+    ])
 
-    if (error) {
-        console.error(error)
+    if (ssnMatch.error || emailMatch.error) {
+        console.error(ssnMatch.error ?? emailMatch.error)
         return { ok: false, error: GENERIC_ERROR }
     }
 
-    if (data != null) {
+    if (ssnMatch.data.length > 0) {
         return { ok: false, error: "Pieteikums ar šo personas kodu jau ir iesniegts." }
+    }
+    if (emailMatch.data.length > 0) {
+        return { ok: false, error: "Šis e-pasts jau tiek izmantots citā pieteikumā." }
     }
 
     return saveApplication(supabase, application)
