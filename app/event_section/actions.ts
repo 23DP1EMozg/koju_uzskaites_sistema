@@ -83,3 +83,42 @@ export const editEventById = async (id: number, event: Event) => {
     if (error) throw error
 }
 
+
+type SignUpResult = { ok: true } | { ok: false, error: string }
+
+const SIGN_UP_ERROR = "Neizdevās pieteikties. Mēģini vēlreiz."
+
+export const signUpForEvent = async (eventId: number): Promise<SignUpResult> => {
+    const user = await getCurrentUser()
+    if (!user?.id) return { ok: false, error: "Lai pieteiktos, lūdzu, ienāc sistēmā." }
+    if (!eventId) return { ok: false, error: "Pasākums nav atrasts." }
+
+    const supabase = await createClient()
+
+    const { data, error } = await supabase
+        .from("events")
+        .select("participant_ids")
+        .eq("id", eventId)
+        .maybeSingle()
+
+    if (error) {
+        console.error(error)
+        return { ok: false, error: SIGN_UP_ERROR }
+    }
+    if (!data) return { ok: false, error: "Pasākums nav atrasts." }
+
+    const participantIds: number[] = data.participant_ids ?? []
+    if (participantIds.includes(user.id)) return { ok: true }
+
+    const { error: updateError } = await supabase
+        .from("events")
+        .update({ participant_ids: [...participantIds, user.id] })
+        .eq("id", eventId)
+
+    if (updateError) {
+        console.error(updateError)
+        return { ok: false, error: SIGN_UP_ERROR }
+    }
+
+    return { ok: true }
+}

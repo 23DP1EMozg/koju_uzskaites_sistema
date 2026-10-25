@@ -8,4 +8,5 @@ export type Event = {
     location?: string,
     image_url?: string
     created_at?: string
+    participant_ids?: number[] | null
 }

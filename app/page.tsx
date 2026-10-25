@@ -49,9 +49,11 @@ export default async function Home() {
     .filter((event) => event.event_date && event.event_date.slice(0, 10) >= today)
     .sort((a, b) => a.event_date!.localeCompare(b.event_date!))
   const events = upcomingEvents.map((event) => ({
+    id: event.id,
     title: event.title ?? "",
     date: formatDate(event.event_date),
     description: event.description ?? "",
+    signedUp: event.participant_ids?.includes(session.id) ?? false,
   }))
 
   return (
