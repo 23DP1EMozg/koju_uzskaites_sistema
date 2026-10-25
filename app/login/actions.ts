@@ -6,6 +6,7 @@ import { homePathForRole, normalizeRole } from "../helper/auth/token";
 import { verifyPassword } from "../helper/auth/password";
 import { createClient } from "../lib/supabase/server";
 import { firstError, validateLogin } from "../helper/validation";
+import { clearFailures, lockedMinutes, recordFailure } from "./attempts";
 
 export type LoginResult =
     | { ok: true, redirectTo: string }
@@ -21,6 +22,11 @@ export const signInUser = async (socialSecurityNumber: string, password: string)
     }
 
     const ssn = socialSecurityNumber.trim()
+
+    const minutes = lockedMinutes(ssn)
+    if (minutes > 0) {
+        return { ok: false, error: `Pārāk daudz neveiksmīgu mēģinājumu. Mēģini vēlreiz pēc ${minutes} min.` }
+    }
 
     try {
         const supabase = await createClient()
@@ -38,13 +44,17 @@ export const signInUser = async (socialSecurityNumber: string, password: string)
 
         // No user, or an application that hasn't been approved yet (no password)
         if (!data?.password) {
+            recordFailure(ssn)
             return { ok: false, error: INVALID_CREDENTIALS }
         }
 
         const isPasswordMatch = await verifyPassword(password, data.password)
         if (!isPasswordMatch) {
+            recordFailure(ssn)
             return { ok: false, error: INVALID_CREDENTIALS }
         }
+
+        clearFailures(ssn)
 
         const role = normalizeRole(data.role)
         const token = signUser({
