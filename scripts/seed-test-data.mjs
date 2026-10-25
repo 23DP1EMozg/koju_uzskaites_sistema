@@ -9,11 +9,6 @@ const TEST_PASSWORD = "Kojas2026!"
 
 // Edvards Mozga (admin), Liels Zirgs, Marks Krustans
 const KEEP_USER_IDS = [12, 13, 14]
-// Fixes for the kept accounts so they pass validation.ts; personal codes stay, they are the logins
-const KEPT_USER_FIXES = {
-    13: { name: "Liels Zirgs", room_number: 313 },
-    14: { room_number: 413 },
-}
 // Only the temporary password state of the kept accounts is kept
 const KEEP_REMINDER_CATEGORY = "Drošība"
 
@@ -44,10 +39,6 @@ await deleteWhere("weekend_stay_requests", q => q.not("user_id", "in", keep))
 await deleteWhere("events", q => q.gte("id", 0))
 await deleteWhere("reminders", q => q.or(`user_id.not.in.${keep},category.neq.${KEEP_REMINDER_CATEGORY}`))
 await deleteWhere("users", q => q.not("id", "in", keep))
-
-for (const [id, fix] of Object.entries(KEPT_USER_FIXES)) {
-    check(await supabase.from("users").update(fix).eq("id", id), `update user ${id}`)
-}
 
 const password = await bcrypt.hash(TEST_PASSWORD, 12)
 const role = JSON.stringify("USER")
