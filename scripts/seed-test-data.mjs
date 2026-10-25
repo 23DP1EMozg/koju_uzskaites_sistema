@@ -43,30 +43,31 @@ await deleteWhere("users", q => q.not("id", "in", keep))
 const password = await bcrypt.hash(TEST_PASSWORD, 12)
 const role = JSON.stringify("USER")
 
+// Girls live on floor 1 and in rooms 515 and 517–530, guys on floors 2–4 and in rooms 501–514 and 516
 // [name, personal code, course, room, phone, last laundry, next kitchen cleaning]
 const tenants = [
-    ["Jānis Bērziņš", "140306-20117", "DP2-1", 101, "+37120011001", "2026-10-20", "2026-10-29"],
+    ["Jānis Bērziņš", "140306-20117", "DP2-1", 203, "+37120011001", "2026-10-20", "2026-10-29"],
     ["Elīna Kalniņa", "030507-20238", "DP2-1", 102, "+37120011002", "2026-10-02", "2026-10-30"],
-    ["Mārtiņš Ozoliņš", "221105-20349", "DP4-1", 105, "+37120011003", "2026-10-22", "2026-11-02"],
-    ["Laura Liepiņa", "170806-20451", "M2", 112, "+37120011004", "2026-09-28", "2026-10-27"],
-    ["Kristers Krūmiņš", "090207-20562", "A3-1", 118, "+37120011005", "2026-10-24", null],
-    ["Sanita Vītola", "251206-20673", "DT2-2", 203, "+37120011006", "2026-10-18", "2026-11-04"],
-    ["Ričards Jansons", "050605-20784", "DP3-2", 207, "+37120011007", "2026-10-05", "2026-10-28"],
-    ["Agnese Zariņa", "120407-20895", "M3", 211, "+37120011008", "2026-10-23", "2026-11-05"],
-    ["Edgars Pētersons", "300906-20916", "A4-1", 219, "+37120011009", "2026-10-21", "2026-11-03"],
-    ["Ieva Kļaviņa", "080105-20127", "DT3-1", 224, "+37120011010", "2026-09-30", null],
+    ["Mārtiņš Ozoliņš", "221105-20349", "DP4-1", 207, "+37120011003", "2026-10-22", "2026-11-02"],
+    ["Laura Liepiņa", "170806-20451", "M2", 105, "+37120011004", "2026-09-28", "2026-10-27"],
+    ["Kristers Krūmiņš", "090207-20562", "A3-1", 211, "+37120011005", "2026-10-24", null],
+    ["Sanita Vītola", "251206-20673", "DT2-2", 112, "+37120011006", "2026-10-18", "2026-11-04"],
+    ["Ričards Jansons", "050605-20784", "DP3-2", 219, "+37120011007", "2026-10-05", "2026-10-28"],
+    ["Agnese Zariņa", "120407-20895", "M3", 118, "+37120011008", "2026-10-23", "2026-11-05"],
+    ["Edgars Pētersons", "300906-20916", "A4-1", 224, "+37120011009", "2026-10-21", "2026-11-03"],
+    ["Ieva Kļaviņa", "080105-20127", "DT3-1", 124, "+37120011010", "2026-09-30", null],
     ["Toms Šulcs", "190307-20238", "DP2-2", 302, "+37120011011", "2026-10-25", "2026-11-01"],
-    ["Paula Grīnberga", "021006-20349", "DP2-2", 306, "+37120011012", "2026-10-19", "2026-10-31"],
-    ["Artūrs Siliņš", "270705-20451", "A2-1", 314, "+37120011013", "2026-10-08", "2026-11-06"],
-    ["Rūta Eglīte", "110807-20562", "M2", 320, "+37120011014", "2026-10-22", "2026-11-07"],
-    ["Dāvis Lācis", "061106-20673", "DP3-1", 327, "+37120011015", "2026-10-17", null],
-    ["Linda Ābele", "230205-20784", "DT4-1", 404, "+37120011016", "2026-10-03", "2026-10-29"],
+    ["Paula Grīnberga", "021006-20349", "DP2-2", 129, "+37120011012", "2026-10-19", "2026-10-31"],
+    ["Artūrs Siliņš", "270705-20451", "A2-1", 306, "+37120011013", "2026-10-08", "2026-11-06"],
+    ["Rūta Eglīte", "110807-20562", "M2", 517, "+37120011014", "2026-10-22", "2026-11-07"],
+    ["Dāvis Lācis", "061106-20673", "DP3-1", 320, "+37120011015", "2026-10-17", null],
+    ["Linda Ābele", "230205-20784", "DT4-1", 519, "+37120011016", "2026-10-03", "2026-10-29"],
     ["Rihards Kalējs", "150506-20895", "DP4-2", 408, "+37120011017", "2026-10-24", "2026-11-02"],
-    ["Madara Sproģe", "040907-20916", "A3-2", 415, "+37120011018", "2026-10-20", "2026-11-08"],
+    ["Madara Sproģe", "040907-20916", "A3-2", 522, "+37120011018", "2026-10-20", "2026-11-08"],
     ["Gustavs Bērziņš", "281206-20127", "DP3-2", 422, "+37120011019", "2026-10-21", "2026-11-03"],
-    ["Evelīna Strautiņa", "130405-20238", "M4", 429, "+37120011020", "2026-09-25", "2026-10-30"],
-    ["Ralfs Āboliņš", "200107-20349", "DP2-1", 501, "+37120011021", "2026-10-23", "2026-11-05"],
-    ["Katrīna Celmiņa", "100606-20451", "DT2-1", 509, "+37120011022", "2026-10-16", null],
+    ["Evelīna Strautiņa", "130405-20238", "M4", 515, "+37120011020", "2026-09-25", "2026-10-30"],
+    ["Ralfs Āboliņš", "200107-20349", "DP2-1", 505, "+37120011021", "2026-10-23", "2026-11-05"],
+    ["Katrīna Celmiņa", "100606-20451", "DT2-1", 525, "+37120011022", "2026-10-16", null],
     ["Niks Ziediņš", "010805-20562", "A4-2", 516, "+37120011023", "2026-10-25", "2026-11-04"],
     ["Alise Ruņģe", "160307-20673", "DP3-1", 530, "+37120011024", "2026-10-07", "2026-10-31"],
 ]
@@ -153,14 +154,14 @@ check(await supabase.from("weekend_stay_requests").insert(stays.map(([name, week
 console.log(`weekend_stay_requests: inserted ${stays.length}`)
 
 const complaints = [
-    ["Elīna Kalniņa", "Otrā stāva dušā jau nedēļu tek ūdens no krāna, pat ja tas ir aizgriezts.", "2026-10-06"],
+    ["Elīna Kalniņa", "Pirmā stāva dušā jau nedēļu tek ūdens no krāna, pat ja tas ir aizgriezts.", "2026-10-06"],
     ["Ričards Jansons", "Virtuvē 2. stāvā nedarbojas viena plīts riņķis.", "2026-10-09"],
-    ["Paula Grīnberga", "Kaimiņi no 307. istabas regulāri trokšņo pēc pusnakts darbdienās.", "2026-10-13"],
-    ["Linda Ābele", "Istabā 404 logs neaizveras līdz galam, naktīs ir ļoti auksti.", "2026-10-15"],
+    ["Paula Grīnberga", "Kaimiņi no 128. istabas regulāri trokšņo pēc pusnakts darbdienās.", "2026-10-13"],
+    ["Linda Ābele", "Istabā 519 logs neaizveras līdz galam, naktīs ir ļoti auksti.", "2026-10-15"],
     ["Artūrs Siliņš", "Veļas mašīna Nr. 2 pagrabā neizgriež veļu, tā paliek slapja.", "2026-10-19"],
     ["Katrīna Celmiņa", "5. stāva gaitenī nedeg divas lampas pie kāpnēm.", "2026-10-21"],
     ["Toms Šulcs", "Ledusskapī virtuvē kāds regulāri paņem manus produktus.", "2026-10-23"],
-    ["Madara Sproģe", "Wi-Fi 4. stāvā vakaros pazūd uz vairākām minūtēm.", "2026-10-25"],
+    ["Madara Sproģe", "Wi-Fi 5. stāvā vakaros pazūd uz vairākām minūtēm.", "2026-10-25"],
 ]
 check(await supabase.from("complaints").insert(complaints.map(([name, description, date]) => ({
     user_id: idOf[name], description, created_at: `${date}T16:00:00+00:00`,
