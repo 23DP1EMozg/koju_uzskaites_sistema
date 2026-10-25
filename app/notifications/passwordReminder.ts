@@ -60,15 +60,17 @@ export const restartPasswordReminders = (userId: number) => replacePasswordRemin
 // After a password change: remove the pending reminder and stop sending new ones
 export const stopPasswordReminders = (userId: number) => replacePasswordReminder(userId, PASSWORD_CHANGED_MESSAGE, [userId])
 
-// Marked read instead of deleted, so the row keeps counting down to the next reminder
-export const markPasswordReminderAsRead = async (userId: number, notificationId: number) => {
+// Marked read instead of deleted, so the row keeps counting down to the next reminder.
+// Any duplicate reminder rows are marked too, so a hidden one doesn't show up next
+export const markPasswordReminderAsRead = async (userId: number) => {
     const supabase = await createClient()
 
     const { error } = await supabase
         .from("reminders")
         .update({ read_by: [userId] })
-        .eq("id", notificationId)
         .eq("user_id", userId)
+        .eq("category", PASSWORD_REMINDER_CATEGORY)
+        .neq("message", PASSWORD_CHANGED_MESSAGE)
 
     if (error) throw error
 }

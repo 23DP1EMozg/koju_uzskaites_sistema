@@ -23,9 +23,13 @@ export const getMyNotifications = async (): Promise<Notification[]> => {
         (notification) => !(notification.read_by ?? []).map(Number).includes(user.id)
     )
 
-    return [...(personal as Notification[]), ...unreadBroadcast].sort(
+    const sorted = [...(personal as Notification[]), ...unreadBroadcast].sort(
         (a, b) => new Date(b.created_at ?? 0).getTime() - new Date(a.created_at ?? 0).getTime()
     )
+
+    // Two page loads at once can each create a password reminder, so only the newest one is shown
+    const newestReminder = sorted.find(notification => notification.category === PASSWORD_REMINDER_CATEGORY)
+    return sorted.filter(notification => notification.category !== PASSWORD_REMINDER_CATEGORY || notification === newestReminder)
 }
 
 export const markMyNotificationAsRead = async (notificationId: number) => {
@@ -40,7 +44,7 @@ export const markMyNotificationAsRead = async (notificationId: number) => {
     }
 
     if (notification.category === PASSWORD_REMINDER_CATEGORY && notification.user_id === user.id) {
-        await markPasswordReminderAsRead(user.id, notificationId)
+        await markPasswordReminderAsRead(user.id)
         return
     }
 
