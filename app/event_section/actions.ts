@@ -78,7 +78,7 @@ export const deleteEventById = async (id: number) => {
 
 
 export const editEventById = async (id: number, event: Event) => {
-    const user = await requireAdmin()
+    await requireAdmin()
 
     if (!Number.isInteger(id)) throw new Error("invalid id")
     if (!event) throw new Error("invalid event")
@@ -87,12 +87,14 @@ export const editEventById = async (id: number, event: Event) => {
 
     const supabase = await createClient()
 
-    const { error } = await supabase
+    // Any admin may edit any event, not only the one who created it
+    const { data, error } = await supabase
         .from("events")
         .update(eventColumns(event))
         .eq("id", id)
-        .eq("created_by", user.id)
+        .select("id")
     if (error) throw error
+    if (data.length === 0) throw new Error("event not found")
 }
 
 

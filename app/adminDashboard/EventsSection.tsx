@@ -1,7 +1,7 @@
 "use client"
 
 import { FormEvent, useEffect, useState } from "react"
-import { createEvent, deleteEventById, getAllEvents } from "../event_section/actions"
+import { createEvent, deleteEventById, editEventById, getAllEvents } from "../event_section/actions"
 import { Event } from "../types/Event"
 import InputField, { FieldError } from "../components/InputField"
 import { EventFields, FieldErrors, MAX_EVENT_DESCRIPTION_LENGTH, MAX_EVENT_LOCATION_LENGTH, MAX_EVENT_TITLE_LENGTH, hasErrors, validateEvent } from "../helper/validation"
@@ -30,6 +30,8 @@ export default function EventsSection({ showToast, requestConfirm }: Props) {
     const [values, setValues] = useState(EMPTY_EVENT)
     const [errors, setErrors] = useState<FieldErrors<keyof EventFields>>({})
     const [pending, setPending] = useState(false)
+    // The form edits this event instead of adding a new one
+    const [editingId, setEditingId] = useState<number | null>(null)
 
     const loadEvents = async () => setEvents(await fetchUpcomingEvents())
 
@@ -53,16 +55,39 @@ export default function EventsSection({ showToast, requestConfirm }: Props) {
 
         setPending(true)
         try {
-            await createEvent(values)
-            setValues(EMPTY_EVENT)
-            showToast("Pasākums pievienots.", "success")
+            if (editingId != null) {
+                await editEventById(editingId, values)
+                showToast("Pasākums saglabāts.", "success")
+            } else {
+                await createEvent(values)
+                showToast("Pasākums pievienots.", "success")
+            }
+            stopEditing()
             await loadEvents()
         } catch (error) {
             console.error(error)
-            showToast("Neizdevās pievienot pasākumu. Mēģini vēlreiz.", "error")
+            showToast(editingId != null ? "Neizdevās saglabāt pasākumu. Mēģini vēlreiz." : "Neizdevās pievienot pasākumu. Mēģini vēlreiz.", "error")
         } finally {
             setPending(false)
         }
+    }
+
+    function startEditing(event: Event) {
+        setEditingId(event.id ?? null)
+        setValues({
+            title: event.title ?? "",
+            event_date: (event.event_date ?? "").slice(0, 10),
+            location: event.location ?? "",
+            description: event.description ?? "",
+        })
+        setErrors({})
+        document.getElementById("pasakumi")?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }
+
+    function stopEditing() {
+        setEditingId(null)
+        setValues(EMPTY_EVENT)
+        setErrors({})
     }
 
     function confirmDelete(event: Event) {
@@ -73,6 +98,7 @@ export default function EventsSection({ showToast, requestConfirm }: Props) {
             action: async () => {
                 try {
                     await deleteEventById(event.id as number)
+                    if (event.id === editingId) stopEditing()
                     await loadEvents()
                 } catch (error) {
                     console.error(error)
@@ -111,13 +137,24 @@ export default function EventsSection({ showToast, requestConfirm }: Props) {
                         />
                         <FieldError id="event_description" error={errors.description} />
                     </label>
-                    <button
-                        type="submit"
-                        disabled={pending}
-                        className="mt-2 cursor-pointer self-end rounded-full bg-white px-10 py-4 text-lg text-black transition hover:bg-white/85 disabled:opacity-60"
-                    >
-                        {pending ? "Saglabā..." : "Pievienot pasākumu"}
-                    </button>
+                    <div className="mt-2 flex flex-wrap justify-end gap-3">
+                        {editingId != null && (
+                            <button
+                                type="button"
+                                onClick={stopEditing}
+                                className="cursor-pointer rounded-full border border-white/80 px-10 py-4 text-lg transition hover:bg-white/10"
+                            >
+                                Atcelt
+                            </button>
+                        )}
+                        <button
+                            type="submit"
+                            disabled={pending}
+                            className="cursor-pointer rounded-full bg-white px-10 py-4 text-lg text-black transition hover:bg-white/85 disabled:opacity-60"
+                        >
+                            {pending ? "Saglabā..." : editingId != null ? "Saglabāt izmaiņas" : "Pievienot pasākumu"}
+                        </button>
+                    </div>
                 </form>
 
                 <div className="flex flex-col gap-5">
@@ -131,6 +168,14 @@ export default function EventsSection({ showToast, requestConfirm }: Props) {
                                     {formatEventDate(event.event_date)}{event.location ? ` · ${event.location}` : ""} · {event.participant_ids?.length ?? 0} pieteikušies
                                 </span>
                             </div>
+                            <button
+                                type="button"
+                                onClick={() => startEditing(event)}
+                                disabled={event.id === editingId}
+                                className="shrink-0 cursor-pointer rounded-full border border-white/80 px-5 py-2.5 text-sm transition hover:bg-white/10 disabled:cursor-default disabled:opacity-40 lg:text-base"
+                            >
+                                Rediģēt
+                            </button>
                             <button
                                 type="button"
                                 onClick={() => confirmDelete(event)}
