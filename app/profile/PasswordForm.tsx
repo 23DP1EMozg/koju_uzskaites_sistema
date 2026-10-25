@@ -86,7 +86,7 @@ export default function PasswordForm({ accentColor }: Props) {
                 <div className="mt-5 flex flex-col gap-3 md:mt-6 md:gap-4">
                     <InputField
                         id="current_password"
-                        label="Pagaidu parole"
+                        label="Pašreizējā parole"
                         type={type}
                         autoComplete="current-password"
                         placeholder="••••••"
