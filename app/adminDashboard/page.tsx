@@ -5,7 +5,7 @@ import Image from "next/image"
 import { Inter } from "next/font/google"
 import Modal from "react-modal"
 import { Application } from "../apply/Application"
-import { acceptAndEditApplication, deleteTenant, getAllComplaints, getAllTenants, getOverdueLaundryTenants, getTenantById, notifyOverdueTenant, getUserApplications, getWeekendStays, rejectApplication, sendNewTemporaryPassword, setWeekendStayStatus } from "./actions"
+import { acceptAndEditApplication, deleteTenant, getAllComplaints, getAllTenants, getOverdueLaundryTenants, getTenantById, notifyOverdueTenant, getUserApplications, getWeekendStays, rejectApplication, sendNewTemporaryPassword, setWeekendStayStatus, updateTenant } from "./actions"
 import { User } from "../types/User"
 import ApplicationCard from "./ApplicationCard"
 import TenantCard from "./TenantCard"
@@ -69,6 +69,8 @@ export default function AdminDashboard() {
     const [isApplicationModalOpen, setIsApplicationModalOpen] = useState<boolean>(false)
     const [isTenantModalOpen, setIsTenantModalOpen] = useState<boolean>(false)
     const [applicationEditData, setApplicationEditData] = useState<User>(EMPTY_EDIT_DATA)
+    // The same form accepts an application or edits an existing tenant
+    const [isEditingTenant, setIsEditingTenant] = useState(false)
     const [tenantViewData, setTenantViewData] = useState<User | null>(null)
     const [tenantViewId, setTenantViewId] = useState<number | null>(null)
     // Resetting the password locks the tenant out of the old one, so the button asks once more first
@@ -139,6 +141,7 @@ export default function AdminDashboard() {
     function closeApplicationModal() {
         setIsApplicationModalOpen(false)
         setApplicationEditData(EMPTY_EDIT_DATA)
+        setIsEditingTenant(false)
         setEditErrors({})
         setEditError(null)
     }
@@ -178,6 +181,18 @@ export default function AdminDashboard() {
 
         setIsSubmitting(true)
         try {
+            if (isEditingTenant) {
+                const result = await updateTenant(applicationEditData.id as number, applicationEditData)
+                if (!result.ok) {
+                    setEditError(result.error)
+                    return
+                }
+                closeApplicationModal()
+                showToast("Iemītnieka dati saglabāti.", "success")
+                getTenants()
+                return
+            }
+
             const result = await acceptAndEditApplication(applicationEditData)
             if (!result.ok) {
                 setEditError(result.error)
@@ -263,6 +278,15 @@ export default function AdminDashboard() {
         setIsTenantModalOpen(false)
         setIsConfirmingPasswordReset(false)
         setPasswordResetMessage(null)
+    }
+
+    function handleEditTenant() {
+        if (tenantViewId == null || !tenantViewData) return
+        const tenant = { ...EMPTY_EDIT_DATA, ...tenantViewData, id: tenantViewId }
+        handleCloseTenantModal()
+        setApplicationEditData(tenant)
+        setIsEditingTenant(true)
+        setIsApplicationModalOpen(true)
     }
 
     async function handleSendNewPassword() {
@@ -530,7 +554,7 @@ export default function AdminDashboard() {
             <footer className="mt-5 h-28 rounded-t-[3rem] bg-black lg:h-32" />
 
             {/* Accept & edit application */}
-            <AdminModal isOpen={isApplicationModalOpen} onClose={closeApplicationModal} title="Apstiprināt pieteikumu">
+            <AdminModal isOpen={isApplicationModalOpen} onClose={closeApplicationModal} title={isEditingTenant ? "Rediģēt iemītnieku" : "Apstiprināt pieteikumu"}>
                 <form onSubmit={handleSubmitAccept} noValidate className="flex flex-col gap-4">
                     <InputField id="edit_name" label="Vārds Uzvārds" required maxLength={100} value={applicationEditData.name ?? ""} onChange={updateEditField("name")} error={editErrors.name} />
                     <InputField id="edit_ssn" label="Personas kods" required inputMode="numeric" maxLength={12} placeholder="000000-00000" value={applicationEditData.social_security_number ?? ""} onChange={updateEditField("social_security_number")} error={editErrors.social_security_number} />
@@ -548,7 +572,7 @@ export default function AdminDashboard() {
                             Atcelt
                         </button>
                         <button type="submit" disabled={isSubmitting} className="cursor-pointer rounded-full bg-white py-4 text-lg text-black transition hover:bg-white/85 disabled:opacity-60">
-                            {isSubmitting ? "Saglabā..." : "Apstiprināt"}
+                            {isSubmitting ? "Saglabā..." : isEditingTenant ? "Saglabāt" : "Apstiprināt"}
                         </button>
                     </div>
                 </form>
@@ -602,6 +626,11 @@ export default function AdminDashboard() {
                     )}
                     {passwordResetMessage && <p role="status" className="text-white/90">{passwordResetMessage}</p>}
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                        {!isConfirmingPasswordReset && (
+                            <button type="button" onClick={handleEditTenant} className="cursor-pointer rounded-full border border-white/80 py-4 text-lg transition hover:bg-white/10">
+                                Rediģēt
+                            </button>
+                        )}
                         {isConfirmingPasswordReset && (
                             <button type="button" onClick={() => setIsConfirmingPasswordReset(false)} className="cursor-pointer rounded-full border border-white/80 py-4 text-lg transition hover:bg-white/10">
                                 Atcelt

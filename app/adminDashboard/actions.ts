@@ -227,6 +227,62 @@ export const deleteTenant = async (id: number) => {
     }
 }
 
+export type UpdateTenantResult =
+    | { ok: true }
+    | { ok: false, error: string }
+
+// Edits an existing tenant's details; the password and role are left alone
+export const updateTenant = async (id: number, u: User): Promise<UpdateTenantResult> => {
+    await requireAdmin()
+    if (!Number.isInteger(id)) return { ok: false, error: "Iemītnieks nav atrasts." }
+
+    const fields = {
+        name: u?.name ?? "",
+        social_security_number: u?.social_security_number ?? "",
+        course: u?.course ?? "",
+        room_number: u?.room_number,
+        phone_number: u?.phone_number ?? "",
+        email: u?.email ?? "",
+    }
+    const validationError = firstError(validateTenant(fields))
+    if (validationError) return { ok: false, error: validationError }
+
+    const supabase = await createClient()
+
+    const [tenant, duplicate] = await Promise.all([
+        supabase.from("users").select("role, password").eq("id", id).maybeSingle(),
+        // The personal code is the login, so it must stay unique
+        supabase.from("users").select("id").eq("social_security_number", fields.social_security_number.trim()).neq("id", id).limit(1),
+    ])
+
+    if (tenant.error || duplicate.error) {
+        console.error(tenant.error ?? duplicate.error)
+        return { ok: false, error: "Neizdevās saglabāt izmaiņas. Mēģini vēlreiz." }
+    }
+    // Only approved tenants: applications are edited when accepting them, admins aren't edited here
+    if (!tenant.data?.password || normalizeRole(tenant.data.role) === Role.ADMIN) return { ok: false, error: "Iemītnieks nav atrasts." }
+    if (duplicate.data.length > 0) return { ok: false, error: "Lietotājs ar šo personas kodu jau eksistē." }
+
+    const { error } = await supabase
+    .from("users")
+    .update({
+        name: normalizeName(fields.name),
+        social_security_number: fields.social_security_number.trim(),
+        course: normalizeCourse(fields.course),
+        room_number: Number(fields.room_number),
+        phone_number: fields.phone_number.trim(),
+        email: fields.email.trim(),
+    })
+    .eq("id", id)
+
+    if (error) {
+        console.error(error)
+        return { ok: false, error: error.code === "23505" ? "Lietotājs ar šiem datiem jau eksistē." : "Neizdevās saglabāt izmaiņas. Mēģini vēlreiz." }
+    }
+
+    return { ok: true }
+}
+
 export const getTenantById = async (id: number) : Promise<User> => {
     await requireAdmin()
     const supabase = await createClient()
