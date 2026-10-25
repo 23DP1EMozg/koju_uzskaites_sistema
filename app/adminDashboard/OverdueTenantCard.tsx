@@ -9,9 +9,25 @@ type Props = {
 }
 
 const daysSince = (date: string) => Math.floor((Date.now() - new Date(date).getTime()) / 86_400_000)
+const formatReminderDate = (date: string) =>
+    new Date(date).toLocaleDateString("lv-LV", { timeZone: "Europe/Riga", day: "numeric", month: "short" })
 
 export default function OverdueTenantCard({ tenant, onNotify }: Props) {
-    const [sent, setSent] = useState(tenant.reminded ?? false)
+    // Sent during this visit; a reminder sent earlier only shows its date, and another one can still be sent
+    const [sent, setSent] = useState(false)
+    const [remindedAt, setRemindedAt] = useState(tenant.reminded_at ?? null)
+    const [pending, setPending] = useState(false)
+
+    const notify = () => {
+        setPending(true)
+        onNotify()
+            .then(() => {
+                setSent(true)
+                setRemindedAt(new Date().toISOString())
+            })
+            .catch(console.error)
+            .finally(() => setPending(false))
+    }
     const overdueTasks = [
         ["Veļa", tenant.last_laundry_date],
         ["Virtuve", tenant.last_kitchen_cleaning_date],
@@ -37,15 +53,20 @@ export default function OverdueTenantCard({ tenant, onNotify }: Props) {
                             {task.label} · <span className="font-semibold text-[#a23a32]">{task.days} d.</span>
                         </li>
                     ))}
+                    {remindedAt && (
+                        <li className="whitespace-nowrap rounded-full bg-black/5 px-3 py-1 text-sm text-black/60 lg:px-5 lg:py-2.5 lg:text-lg">
+                            Atgādināts {formatReminderDate(remindedAt)}
+                        </li>
+                    )}
                 </ul>
             </div>
 
             <button
                 type="button"
-                onClick={() => onNotify().then(() => setSent(true)).catch(console.error)}
-                disabled={sent}
-                aria-label={sent ? `Paziņojums nosūtīts: ${tenant.name}` : `Nosūtīt paziņojumu: ${tenant.name}`}
-                title={sent ? "Paziņojums nosūtīts" : "Nosūtīt paziņojumu"}
+                onClick={notify}
+                disabled={sent || pending}
+                aria-label={sent ? `Atgādinājums nosūtīts: ${tenant.name}` : `Nosūtīt atgādinājumu: ${tenant.name}`}
+                title={sent ? "Atgādinājums nosūtīts" : "Nosūtīt atgādinājumu"}
                 className="grid size-10 shrink-0 cursor-pointer place-items-center rounded-full bg-black text-white transition hover:bg-black/80 disabled:cursor-default disabled:opacity-30 lg:size-16"
             >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-4 lg:size-6">

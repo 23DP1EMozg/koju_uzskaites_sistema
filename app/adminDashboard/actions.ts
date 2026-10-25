@@ -396,19 +396,21 @@ export const getOverdueLaundryTenants = async () : Promise<OverdueTenant[]> => {
     if (error) throw error
     if (data.length === 0) return []
 
-    // A reminder sent after the student's last laundry change means this overdue period was already reminded
+    // Only reminders sent after the student's last laundry change count for this overdue period.
+    // A reminder the student marked as read is deleted, so it no longer counts
     const { data: reminders, error: remindersError } = await supabase
     .from("reminders")
     .select("user_id, created_at")
     .eq("category", LAUNDRY_REMINDER_CATEGORY)
     .in("user_id", data.map(tenant => tenant.id))
+    .order("created_at", { ascending: false })
 
     if (remindersError) throw remindersError
 
     return data.map(tenant => ({
         ...tenant,
-        reminded: reminders.some(reminder =>
-            reminder.user_id === tenant.id && new Date(reminder.created_at) >= new Date(tenant.last_laundry_date)),
+        reminded_at: reminders.find(reminder =>
+            reminder.user_id === tenant.id && new Date(reminder.created_at) >= new Date(tenant.last_laundry_date))?.created_at ?? null,
     }))
 }
 
