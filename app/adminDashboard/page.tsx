@@ -348,7 +348,6 @@ export default function AdminDashboard() {
             <AdminNav
                 items={NAV_ITEMS}
                 activeId={activeSection}
-                hasNotifications={applications.length > 0}
             />
 
             {/* Hero */}

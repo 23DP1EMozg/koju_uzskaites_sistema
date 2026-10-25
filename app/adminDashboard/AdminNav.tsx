@@ -12,7 +12,6 @@ export type NavItem = {
 type Props = {
     items: NavItem[],
     activeId: string,
-    hasNotifications: boolean,
 }
 
 function scrollToSection(e: MouseEvent<HTMLAnchorElement>, id: string) {
@@ -25,7 +24,7 @@ function scrollToSection(e: MouseEvent<HTMLAnchorElement>, id: string) {
     history.replaceState(null, "", `#${id}`)
 }
 
-export default function AdminNav({ items, activeId, hasNotifications }: Props) {
+export default function AdminNav({ items, activeId }: Props) {
     return (
         <nav className="fixed inset-x-4 top-6 z-50 flex items-center justify-between gap-4 lg:inset-x-[3.25rem] lg:top-8">
             <div className="flex shrink-0 items-center gap-2">
@@ -74,22 +73,6 @@ export default function AdminNav({ items, activeId, hasNotifications }: Props) {
                 ))}
             </ul>
 
-            {/* The dot means new applications are waiting, so the bell leads to them */}
-            <a
-                href={`#${items[0].id}`}
-                onClick={e => scrollToSection(e, items[0].id)}
-                aria-label={hasNotifications ? "Jauni pieteikumi" : "Pieteikumi"}
-                title={hasNotifications ? "Jauni pieteikumi" : "Nav jaunu pieteikumu"}
-                className="relative grid size-12 shrink-0 place-items-center rounded-full bg-[#a23a32] text-white shadow-lg transition hover:bg-[#8a2f29] lg:size-[4.9rem]"
-            >
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="size-5 lg:size-[1.7rem]">
-                    <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9" />
-                    <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" />
-                </svg>
-                {hasNotifications && (
-                    <span className="absolute top-2.5 right-2.5 size-2 rounded-full bg-white lg:top-4 lg:right-4 lg:size-3" />
-                )}
-            </a>
         </nav>
     )
 }
