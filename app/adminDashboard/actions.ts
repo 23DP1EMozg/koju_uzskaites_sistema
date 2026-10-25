@@ -420,8 +420,8 @@ export const notifyOverdueTenant = async (id: number) => {
     await createNotification({ user_id: id, message: "Jums ir jānodod veļa", category: LAUNDRY_REMINDER_CATEGORY })
 }
 
-// Upcoming and recent weekend stay requests (weekends from last week on), soonest weekend first,
-// each with the tenant's approved stays in that weekend's month
+// Upcoming and recent weekend stay requests (weekends from last week on), undecided ones on top,
+// then soonest weekend first, each with the tenant's approved stays in that weekend's month
 export const getWeekendStays = async () : Promise<(WeekendStay & { month_stay_count: number })[]> => {
     await requireAdmin()
     const supabase = await createClient()
@@ -438,10 +438,13 @@ export const getWeekendStays = async () : Promise<(WeekendStay & { month_stay_co
 
     if (error) throw error
 
-    return Promise.all(data.map(async stay => ({
+    const stays = await Promise.all(data.map(async stay => ({
         ...stay,
         month_stay_count: await countMonthStays(supabase, stay.user_id, stay.weekend_date),
     })))
+
+    // sort is stable, so each group keeps the date order from the query
+    return stays.sort((a, b) => Number(b.status === "pending") - Number(a.status === "pending"))
 }
 
 export const setWeekendStayStatus = async (id: number, status: Exclude<WeekendStayStatus, "pending">) => {
