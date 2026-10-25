@@ -14,7 +14,7 @@ const faqItems: FAQItem[] = [
     {question: 'Kad ir atvērta virtuve?', answer: "Virtuve ir atvērta katru dienu no 6:00 līdz 22:00. Pēc ēst gatavošanas sakop aiz sevis un nomazgā traukus."},
     {question: 'Kā notiek virtuves tīrīšana?', answer: "Virtuvi tīra pa istabām secīgi, pēc istabu numuru kārtības. Tavas istabas nākamās virtuves tīrīšanas datums ir redzams profila sadaļā logā „Nākamā virtuves tīrīšana”."},
     {question: 'Kad notiek istabu tīrīšana?', answer: "Istabu tīrīšana notiek katru trešdienu. Nākamās tīrīšanas datums ir redzams profila sadaļā."},
-    {question: 'Kā pieteikt paliekšanu brīvdienās?', answer: "Ja vēlies palikt dienesta viesnīcā brīvdienās, tas jāpiesaka iepriekš dienesta viesnīcas vadītājam, norādot paliekšanas iemeslu."},
+    {question: 'Kā pieteikt palikšanu brīvdienās?', answer: "Ja vēlies palikt dienesta viesnīcā brīvdienās, tas jāpiesaka iepriekš dienesta viesnīcas vadītājam, norādot palikšanas iemeslu."},
     {question: 'Kā tiek apmaksāti rēķini?', answer: "Rēķini par dzīvošanu dienesta viesnīcā tiek nosūtīti uz tavu e-pastu. Atlaide pienākas Goda ģimenes apliecības „3+ Ģimenes karte” īpašniekiem un personām ar trūcīgas personas statusu."},
     {question: 'Vai es varu atvest draugus?', answer: "Nē, viesi dienesta viesnīcā drīkst būt tikai ģimenes locekļi vai radinieki. Par viņu ierašanos iepriekš jāpaziņo dežurantam."},
     {question: 'Kā pieteikt remontu istabā?', answer: "Bojājumu vai nepieciešamo remontu apraksti sadaļā „Sūdzības” šajā lietotnē, norādot istabas numuru un problēmu. Ja bojājums ir steidzams, piemēram, ūdens noplūde, uzreiz informē dežurantu vai dienesta viesnīcas vadītāju."},

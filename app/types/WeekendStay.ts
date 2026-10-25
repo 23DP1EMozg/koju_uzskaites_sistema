@@ -26,8 +26,8 @@ export const WEEKEND_STAY_STATUSES: Record<WeekendStayStatus, string> = {
     rejected: "Noraidīts",
 }
 
-// How many weekends ahead a stay can be requested
-export const WEEKENDS_AHEAD = 4
+// Distance stays are approved automatically while the tenant has fewer approved stays than this in the month
+export const AUTO_APPROVE_MONTHLY_LIMIT = 3
 
 const rigaToday = () => new Date(new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Riga" }))
 
@@ -37,12 +37,19 @@ const addDays = (date: string, days: number) => {
     return d.toISOString().slice(0, 10)
 }
 
-// Saturdays of the next WEEKENDS_AHEAD weekends (today counts if it is Saturday), YYYY-MM-DD
-export const getUpcomingWeekends = (): string[] => {
+// Saturday of the upcoming weekend (today counts if it is Saturday), YYYY-MM-DD; stays can only be requested for it
+export const getUpcomingWeekend = (): string => {
     const saturday = rigaToday()
     saturday.setUTCDate(saturday.getUTCDate() + (6 - saturday.getUTCDay() + 7) % 7)
-    const first = saturday.toISOString().slice(0, 10)
-    return Array.from({ length: WEEKENDS_AHEAD }, (_, i) => addDays(first, i * 7))
+    return saturday.toISOString().slice(0, 10)
+}
+
+// A stay counts towards the month of its Saturday; first and last day of that month, YYYY-MM-DD
+export const monthRange = (saturday: string) => {
+    const from = `${saturday.slice(0, 7)}-01`
+    const next = new Date(from)
+    next.setUTCMonth(next.getUTCMonth() + 1)
+    return { from, to: addDays(next.toISOString().slice(0, 10), -1) }
 }
 
 // Friday to Sunday around a weekend's Saturday; an event date must fall inside it

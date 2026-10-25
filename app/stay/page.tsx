@@ -4,8 +4,9 @@ import { Inter } from "next/font/google";
 import { getFloorTheme } from "@/app/helper/theme";
 import { getCurrentUser } from "@/app/helper/auth/jwt";
 import { createClient } from "@/app/lib/supabase/server";
-import { WEEKEND_STAY_REASONS, WEEKEND_STAY_STATUSES, WeekendStay, formatStayDate, formatWeekend, getUpcomingWeekends } from "@/app/types/WeekendStay";
+import { WEEKEND_STAY_REASONS, WEEKEND_STAY_STATUSES, WeekendStay, formatStayDate, formatWeekend, getUpcomingWeekend } from "@/app/types/WeekendStay";
 import StayForm from "./StayForm";
+import { countMonthStays, syncStayCount } from "./stayCount";
 
 const inter = Inter({
     subsets: ["latin", "latin-ext"],
@@ -54,6 +55,11 @@ export default async function Stay() {
 
     const myStays: WeekendStay[] = stays ?? []
 
+    // Counts restart every month; syncing here also resets the stored count once a new month begins
+    const weekend = getUpcomingWeekend()
+    const monthStays = await countMonthStays(supabase, session.id, weekend).catch(() => null)
+    if (monthStays != null) await syncStayCount(supabase, session.id, weekend).catch(console.error)
+
     return (
         <main
             style={{ backgroundImage: `url('${theme.homeBg}')` }}
@@ -76,13 +82,18 @@ export default async function Stay() {
                 <div className="flex w-full flex-col gap-5 md:w-[50%] md:gap-7">
                     <div className="flex flex-col gap-3">
                         <p className="text-lg leading-none text-white/80 md:text-2xl">Brīvdienas</p>
-                        <h1 className="text-5xl font-semibold leading-none text-white md:text-7xl">Paliekšana</h1>
+                        <h1 className="text-5xl font-semibold leading-none text-white md:text-7xl">Palikšana</h1>
                     </div>
 
                     <div className="w-full rounded-[20px] bg-white px-5 pt-5 pb-6 md:rounded-[28px] md:px-7 md:pt-6 md:pb-7">
-                        <p className="text-3xl font-bold italic leading-none md:text-[40px]">Mani pieteikumi</p>
+                        <div className="flex items-end justify-between gap-4">
+                            <p className="text-3xl font-bold italic leading-none md:text-[40px]">Mani pieteikumi</p>
+                            {monthStays != null && (
+                                <p className="shrink-0 text-sm text-neutral-500">Šomēnes: <span className="font-semibold text-black">{monthStays}</span></p>
+                            )}
+                        </div>
                         {myStays.length === 0 ? (
-                            <p className="mt-5 text-neutral-500 md:mt-6">Tu vēl neesi pieteicis paliekšanu.</p>
+                            <p className="mt-5 text-neutral-500 md:mt-6">Tu vēl neesi pieteicis palikšanu.</p>
                         ) : (
                             <ul style={{ borderColor: theme.accentColor }} className="mt-5 flex flex-col gap-4 border-l-4 pl-5 md:mt-6">
                                 {myStays.map(stay => (
@@ -101,7 +112,7 @@ export default async function Stay() {
                     </div>
                 </div>
 
-                <StayForm accentColor={theme.accentColor} weekends={getUpcomingWeekends()} />
+                <StayForm accentColor={theme.accentColor} weekend={weekend} />
             </div>
         </main>
     )

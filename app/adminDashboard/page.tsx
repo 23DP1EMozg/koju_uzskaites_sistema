@@ -31,7 +31,7 @@ const NAV_ITEMS: NavItem[] = [
     { id: "pieteikumi", label: "Pieteikumi" },
     { id: "iemitnieki", label: "Iemītnieki" },
     { id: "kavetaji", label: "Kavētāji" },
-    { id: "paliksana", label: "Paliekšana" },
+    { id: "paliksana", label: "Palikšana" },
     { id: "sudzibas", label: "Sūdzības" },
     { id: "informacija", label: "Informācija" },
     { id: "pasakumi", label: "Pasākumi" },
@@ -73,7 +73,7 @@ export default function AdminDashboard() {
     const [complaints, setComplaints] = useState<Complaint[]>([])
     const [complaintViewData, setComplaintViewData] = useState<Complaint | null>(null)
     const [overdueTenants, setOverdueTenants] = useState<OverdueTenant[]>([])
-    const [weekendStays, setWeekendStays] = useState<WeekendStay[]>([])
+    const [weekendStays, setWeekendStays] = useState<(WeekendStay & { month_stay_count: number })[]>([])
 
     const getApplications = async () => {
         try {
@@ -363,7 +363,7 @@ export default function AdminDashboard() {
             <section id="paliksana" className="scroll-mt-4 px-4 pb-16 lg:px-[7.5rem] lg:pb-28">
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                     <h2 className="bg-gradient-to-b from-black from-30% to-[#a23a32] bg-clip-text pr-4 text-6xl font-extrabold italic leading-tight tracking-tight text-transparent lg:text-[8.5rem] lg:leading-none">
-                        Paliekšana
+                        Palikšana
                     </h2>
                     <p className="max-w-[26rem] text-lg text-black/60 lg:mb-2 lg:text-2xl">
                         Iemītnieki, kas vēlas palikt dienesta viesnīcā brīvdienās
@@ -372,7 +372,7 @@ export default function AdminDashboard() {
 
                 <div className="mt-10 flex flex-col gap-5 lg:mt-14">
                     {weekendStays.length === 0 ? (
-                        <p className="text-lg text-black/60">Nav paliekšanas pieteikumu.</p>
+                        <p className="text-lg text-black/60">Nav palikšanas pieteikumu.</p>
                     ) : (
                         weekendStays.map(s => (
                             <WeekendStayCard

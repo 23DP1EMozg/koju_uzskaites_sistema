@@ -9,7 +9,7 @@ import { createWeekendStay } from "./actions";
 
 type Props = {
     accentColor: string,
-    weekends: string[],
+    weekend: string,
 }
 
 // Same look as InputField, for the select and textarea
@@ -27,8 +27,8 @@ function Field({ id, label, children }: { id: string, label: string, children: R
 
 const controlClass = "w-full min-w-0 cursor-pointer bg-transparent text-sm text-white outline-none [&>option]:text-black"
 
-export default function StayForm({ accentColor, weekends }: Props) {
-    const empty = { weekendDate: weekends[0], reason: "", eventDate: "", reasonText: "" }
+export default function StayForm({ accentColor, weekend }: Props) {
+    const empty = { weekendDate: weekend, reason: "", eventDate: "", reasonText: "" }
     const [values, setValues] = useState(empty)
     const [toast, setToast] = useState<ToastMessage | null>(null)
     const [isPending, startTransition] = useTransition()
@@ -37,11 +37,6 @@ export default function StayForm({ accentColor, weekends }: Props) {
 
     const update = (field: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setValues(prev => ({ ...prev, [field]: e.target.value }))
-    }
-
-    // A picked event date may not fit a newly chosen weekend
-    const changeWeekend = (e: React.ChangeEvent<HTMLSelectElement>) => {
-        setValues(prev => ({ ...prev, weekendDate: e.target.value, eventDate: "" }))
     }
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -57,7 +52,11 @@ export default function StayForm({ accentColor, weekends }: Props) {
             }
 
             setValues(empty)
-            setToast({ id: Date.now(), text: "Pieteikums nosūtīts. Administrācija to izskatīs.", variant: "success" })
+            setToast({
+                id: Date.now(),
+                text: result.approved ? "Palikšana apstiprināta." : "Pieteikums nosūtīts. Administrācija to izskatīs.",
+                variant: "success",
+            })
         })
     }
 
@@ -72,22 +71,17 @@ export default function StayForm({ accentColor, weekends }: Props) {
                 noValidate
                 className="flex w-full flex-col rounded-[20px] bg-black/45 px-5 pt-5 pb-6 text-white shadow-[0_4px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm md:w-[42%] md:rounded-[28px] md:px-7 md:pt-6 md:pb-7"
             >
-                <h2 className="text-3xl font-bold italic leading-none md:text-[40px]">Pieteikt paliekšanu</h2>
+                <h2 className="text-3xl font-bold italic leading-none md:text-[40px]">Pieteikt palikšanu</h2>
                 <div className="mt-4 flex gap-4">
                     <span style={{ background: accentColor }} className="w-1 shrink-0 rounded-full" />
                     <p className="text-sm leading-snug text-white/85 md:text-[15px]">
-                        Paliekšana brīvdienās jāpiesaka iepriekš, norādot iemeslu. Pieteikumu apstiprina administrācija.
+                        Palikšana brīvdienās jāpiesaka iepriekš, norādot iemeslu. Pieteikumu apstiprina administrācija.
                     </p>
                 </div>
 
                 <div className="mt-5 flex flex-col gap-3 md:mt-6 md:gap-4">
-                    <Field id="stay_weekend" label="Nedēļas nogale">
-                        <select id="stay_weekend" value={values.weekendDate} onChange={changeWeekend} className={controlClass}>
-                            {weekends.map(weekend => (
-                                <option key={weekend} value={weekend}>{formatWeekend(weekend)}</option>
-                            ))}
-                        </select>
-                    </Field>
+                    {/* Only the upcoming weekend can be requested */}
+                    <InputField id="stay_weekend" label="Nedēļas nogale" value={formatWeekend(weekend)} readOnly />
 
                     <Field id="stay_reason" label="Iemesls">
                         <select id="stay_reason" required value={values.reason} onChange={update("reason")} className={controlClass}>

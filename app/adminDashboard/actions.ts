@@ -10,6 +10,7 @@ import { Complaint } from "../types/Complaint"
 import { Notification } from "../types/Notification"
 import { OverdueTenant } from "../types/OverdueTenant"
 import { WeekendStay, WeekendStayStatus } from "../types/WeekendStay"
+import { countMonthStays, syncStayCount } from "../stay/stayCount"
 
 export const getUserApplications = async () : Promise<Application[]> => {
     await requireAdmin()
@@ -213,8 +214,9 @@ export const notifyOverdueTenant = async (id: number) => {
     await createNotification({ user_id: id, message: "Jums ir jānodod veļa", category: LAUNDRY_REMINDER_CATEGORY })
 }
 
-// Upcoming and recent weekend stay requests (weekends from last week on), soonest weekend first
-export const getWeekendStays = async () : Promise<WeekendStay[]> => {
+// Upcoming and recent weekend stay requests (weekends from last week on), soonest weekend first,
+// each with the tenant's approved stays in that weekend's month
+export const getWeekendStays = async () : Promise<(WeekendStay & { month_stay_count: number })[]> => {
     await requireAdmin()
     const supabase = await createClient()
 
@@ -230,7 +232,10 @@ export const getWeekendStays = async () : Promise<WeekendStay[]> => {
 
     if (error) throw error
 
-    return data
+    return Promise.all(data.map(async stay => ({
+        ...stay,
+        month_stay_count: await countMonthStays(supabase, stay.user_id, stay.weekend_date),
+    })))
 }
 
 export const setWeekendStayStatus = async (id: number, status: Exclude<WeekendStayStatus, "pending">) => {
@@ -243,24 +248,11 @@ export const setWeekendStayStatus = async (id: number, status: Exclude<WeekendSt
     .update({ status })
     .eq("id", id)
     .eq("status", "pending")
-    .select("user_id")
+    .select("user_id, weekend_date")
     .maybeSingle()
 
     if (error) throw error
     if (!data || status !== "approved") return
 
-    const { data: user, error: userError } = await supabase
-    .from("users")
-    .select("weekend_stay_count")
-    .eq("id", data.user_id)
-    .single()
-
-    if (userError) throw userError
-
-    const { error: updateError } = await supabase
-    .from("users")
-    .update({ weekend_stay_count: (user.weekend_stay_count ?? 0) + 1 })
-    .eq("id", data.user_id)
-
-    if (updateError) throw updateError
+    await syncStayCount(supabase, data.user_id, data.weekend_date)
 }

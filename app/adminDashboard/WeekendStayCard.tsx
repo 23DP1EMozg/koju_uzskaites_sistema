@@ -6,7 +6,7 @@ import { WEEKEND_STAY_REASONS, WEEKEND_STAY_STATUSES, WeekendStay, formatStayDat
 import { complaintSenderLabel } from "./ComplaintCard"
 
 type Props = {
-    stay: WeekendStay,
+    stay: WeekendStay & { month_stay_count: number },
     tenant?: User,
     onDecide: (status: "approved" | "rejected") => Promise<void>,
 }
@@ -31,7 +31,10 @@ export default function WeekendStayCard({ stay, tenant, onDecide }: Props) {
             </span>
 
             <div className="flex min-w-0 flex-1 flex-col gap-1">
-                <span className="truncate text-lg lg:text-2xl">{complaintSenderLabel(tenant)}</span>
+                <span className="truncate text-lg lg:text-2xl">
+                    {complaintSenderLabel(tenant)}
+                    <span className="text-black/60"> · {stay.month_stay_count} šomēnes</span>
+                </span>
                 <span className="break-words text-sm text-black/60 lg:text-lg">
                     {reason}{detail ? ` · ${detail}` : ""}
                 </span>
