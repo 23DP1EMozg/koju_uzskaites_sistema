@@ -5,7 +5,7 @@ import InputField from "../components/InputField";
 import ApplyButton from "../components/ApplyButton";
 import Toast, { ToastMessage } from "../components/Toast";
 import { changePassword } from "./actions";
-import { MIN_PASSWORD_LENGTH } from "./passwordRules";
+import { FieldErrors, MAX_PASSWORD_LENGTH, MIN_PASSWORD_LENGTH, hasErrors, validatePasswordChange } from "../helper/validation";
 
 type Props = {
     accentColor: string,
@@ -16,6 +16,7 @@ const EMPTY = { current: "", next: "", confirm: "" }
 export default function PasswordForm({ accentColor }: Props) {
     const [values, setValues] = useState(EMPTY)
     const [showPasswords, setShowPasswords] = useState(false)
+    const [errors, setErrors] = useState<FieldErrors<keyof typeof EMPTY>>({})
     const [toast, setToast] = useState<ToastMessage | null>(null)
     const [isPending, startTransition] = useTransition()
 
@@ -23,11 +24,16 @@ export default function PasswordForm({ accentColor }: Props) {
 
     const update = (field: keyof typeof EMPTY) => (e: React.ChangeEvent<HTMLInputElement>) => {
         setValues(prev => ({ ...prev, [field]: e.target.value }))
+        setErrors(prev => ({ ...prev, [field]: undefined }))
     }
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setToast(null)
+
+        const fieldErrors = validatePasswordChange(values)
+        setErrors(fieldErrors)
+        if (hasErrors(fieldErrors)) return
 
         startTransition(async () => {
             const result = await changePassword(values.current, values.next, values.confirm)
@@ -86,6 +92,7 @@ export default function PasswordForm({ accentColor }: Props) {
                         placeholder="••••••"
                         value={values.current}
                         onChange={update("current")}
+                        error={errors.current}
                     />
                     <InputField
                         id="new_password"
@@ -94,7 +101,9 @@ export default function PasswordForm({ accentColor }: Props) {
                         autoComplete="new-password"
                         placeholder="••••••••"
                         value={values.next}
+                        maxLength={MAX_PASSWORD_LENGTH}
                         onChange={update("next")}
+                        error={errors.next}
                     />
                     <InputField
                         id="confirm_password"
@@ -103,7 +112,9 @@ export default function PasswordForm({ accentColor }: Props) {
                         autoComplete="new-password"
                         placeholder="••••••••"
                         value={values.confirm}
+                        maxLength={MAX_PASSWORD_LENGTH}
                         onChange={update("confirm")}
+                        error={errors.confirm}
                     />
                 </div>
 

@@ -5,6 +5,7 @@ import { addTokenToCookie, removeTokenCookie, signUser } from "../helper/auth/jw
 import { homePathForRole, normalizeRole } from "../helper/auth/token";
 import { verifyPassword } from "../helper/auth/password";
 import { createClient } from "../lib/supabase/server";
+import { firstError, validateLogin } from "../helper/validation";
 
 export type LoginResult =
     | { ok: true, redirectTo: string }
@@ -14,15 +15,12 @@ const INVALID_CREDENTIALS = "Nepareizs personas kods vai parole."
 
 // Returns a result instead of throwing: errors thrown from server actions are hidden in production
 export const signInUser = async (socialSecurityNumber: string, password: string): Promise<LoginResult> => {
+    const validationError = firstError(validateLogin({ socialSecurityNumber, password }))
+    if (validationError) {
+        return { ok: false, error: validationError }
+    }
+
     const ssn = socialSecurityNumber.trim()
-
-    if (!ssn || !password) {
-        return { ok: false, error: "Ievadi personas kodu un paroli." }
-    }
-
-    if (!/^\d{6}-\d{5}$/.test(ssn)) {
-        return { ok: false, error: "Personas kodam jābūt formātā 000000-00000." }
-    }
 
     try {
         const supabase = await createClient()

@@ -9,6 +9,7 @@ import InputField from "../components/InputField";
 import ApplyButton from "../components/ApplyButton";
 import Toast, { ToastMessage } from "../components/Toast";
 import { signInUser } from "./actions";
+import { FieldErrors, formatSocialSecurityNumber, hasErrors, validateLogin } from "../helper/validation";
 
 const inter = Inter({
     subsets: ["latin", "latin-ext"],
@@ -19,6 +20,7 @@ export default function Login() {
     const [socialSecurityNumber, setSocialSecurityNumber] = useState("")
     const [password, setPassword] = useState("")
     const [showPassword, setShowPassword] = useState(false)
+    const [errors, setErrors] = useState<FieldErrors<"socialSecurityNumber" | "password">>({})
     const [toast, setToast] = useState<ToastMessage | null>(null)
     const [isPending, startTransition] = useTransition()
 
@@ -29,6 +31,10 @@ export default function Login() {
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setToast(null)
+
+        const fieldErrors = validateLogin({ socialSecurityNumber, password })
+        setErrors(fieldErrors)
+        if (hasErrors(fieldErrors)) return
 
         startTransition(async () => {
             const result = await signInUser(socialSecurityNumber, password)
@@ -75,8 +81,10 @@ export default function Login() {
                         inputMode="numeric"
                         placeholder="000000-00000"
                         autoFocus
+                        maxLength={12}
                         value={socialSecurityNumber}
-                        onChange={e => setSocialSecurityNumber(e.target.value)}
+                        onChange={e => { setSocialSecurityNumber(formatSocialSecurityNumber(e.target.value)); setErrors(prev => ({ ...prev, socialSecurityNumber: undefined })) }}
+                        error={errors.socialSecurityNumber}
                     />
                     <InputField
                         id="password"
@@ -85,7 +93,8 @@ export default function Login() {
                         autoComplete="current-password"
                         placeholder="••••••"
                         value={password}
-                        onChange={e => setPassword(e.target.value)}
+                        onChange={e => { setPassword(e.target.value); setErrors(prev => ({ ...prev, password: undefined })) }}
+                        error={errors.password}
                         trailing={
                             <button
                                 type="button"

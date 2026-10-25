@@ -1,11 +1,12 @@
 "use client"
 
 import { FormEvent, ReactNode, useCallback, useState, useTransition } from "react";
-import InputField from "../components/InputField";
+import InputField, { FieldError } from "../components/InputField";
 import ApplyButton from "../components/ApplyButton";
 import Toast, { ToastMessage } from "../components/Toast";
 import { WEEKEND_STAY_REASONS, formatWeekend, weekendRange } from "../types/WeekendStay";
 import { createWeekendStay } from "./actions";
+import { FieldErrors, MAX_STAY_REASON_LENGTH, WeekendStayFields, hasErrors, validateWeekendStay } from "../helper/validation";
 
 type Props = {
     accentColor: string,
@@ -13,14 +14,15 @@ type Props = {
 }
 
 // Same look as InputField, for the select and textarea
-function Field({ id, label, children }: { id: string, label: string, children: ReactNode }) {
+function Field({ id, label, error, children }: { id: string, label: string, error?: string, children: ReactNode }) {
     return (
         <label
             htmlFor={id}
             className="flex flex-col gap-1 rounded-2xl bg-white/10 px-6 pt-4 pb-4 text-white shadow-[0_4px_14px_rgba(0,0,0,0.18)] backdrop-blur-sm transition focus-within:bg-white/15 focus-within:ring-1 focus-within:ring-white/60"
         >
             <span className="text-xs tracking-wide text-white/90">{label}</span>
-            <span className="flex items-center gap-2 border-b border-white/80 pb-1">{children}</span>
+            <span className={`flex items-center gap-2 border-b pb-1 ${error ? "border-[#ffb4ab]" : "border-white/80"}`}>{children}</span>
+            <FieldError id={id} error={error} />
         </label>
     )
 }
@@ -30,6 +32,7 @@ const controlClass = "w-full min-w-0 cursor-pointer bg-transparent text-sm text-
 export default function StayForm({ accentColor, weekend }: Props) {
     const empty = { weekendDate: weekend, reason: "", eventDate: "", reasonText: "" }
     const [values, setValues] = useState(empty)
+    const [errors, setErrors] = useState<FieldErrors<keyof WeekendStayFields>>({})
     const [toast, setToast] = useState<ToastMessage | null>(null)
     const [isPending, startTransition] = useTransition()
 
@@ -37,11 +40,16 @@ export default function StayForm({ accentColor, weekend }: Props) {
 
     const update = (field: keyof typeof empty) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setValues(prev => ({ ...prev, [field]: e.target.value }))
+        setErrors(prev => ({ ...prev, [field]: undefined }))
     }
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setToast(null)
+
+        const fieldErrors = validateWeekendStay(values)
+        setErrors(fieldErrors)
+        if (hasErrors(fieldErrors)) return
 
         startTransition(async () => {
             const result = await createWeekendStay(values)
@@ -83,8 +91,8 @@ export default function StayForm({ accentColor, weekend }: Props) {
                     {/* Only the upcoming weekend can be requested */}
                     <InputField id="stay_weekend" label="Nedēļas nogale" value={formatWeekend(weekend)} readOnly />
 
-                    <Field id="stay_reason" label="Iemesls">
-                        <select id="stay_reason" required value={values.reason} onChange={update("reason")} className={controlClass}>
+                    <Field id="stay_reason" label="Iemesls" error={errors.reason}>
+                        <select id="stay_reason" required aria-invalid={errors.reason ? true : undefined} value={values.reason} onChange={update("reason")} className={controlClass}>
                             <option value="" disabled>Izvēlies iemeslu</option>
                             {Object.entries(WEEKEND_STAY_REASONS).map(([value, label]) => (
                                 <option key={value} value={value}>{label}</option>
@@ -102,16 +110,18 @@ export default function StayForm({ accentColor, weekend }: Props) {
                             max={range.to}
                             value={values.eventDate}
                             onChange={update("eventDate")}
+                            error={errors.eventDate}
                             className="[&_input]:[color-scheme:dark]"
                         />
                     )}
 
                     {values.reason === "other" && (
-                        <Field id="stay_reason_text" label="Apraksti iemeslu">
+                        <Field id="stay_reason_text" label="Apraksti iemeslu" error={errors.reasonText}>
                             <textarea
                                 id="stay_reason_text"
                                 required
-                                maxLength={500}
+                                aria-invalid={errors.reasonText ? true : undefined}
+                                maxLength={MAX_STAY_REASON_LENGTH}
                                 placeholder="Kāpēc paliksi dienesta viesnīcā?"
                                 value={values.reasonText}
                                 onChange={update("reasonText")}

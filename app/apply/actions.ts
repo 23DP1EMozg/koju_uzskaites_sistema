@@ -3,26 +3,28 @@
 import { SupabaseClient } from "@supabase/supabase-js";
 import { createClient } from "../lib/supabase/server";
 import { Application } from "./Application";
+import { firstError, normalizeName, validateApplication } from "../helper/validation";
 
 type ApplyResult = { ok: true } | { ok: false, error: string }
 
 const GENERIC_ERROR = "Neizdevās nosūtīt pieteikumu. Mēģini vēlreiz."
 
 export const apply = async (inputData?: Application): Promise<ApplyResult> => {
-    if (!inputData?.name.trim() || !inputData.phone_number.trim()) {
+    if (!inputData) {
         return { ok: false, error: "Lūdzu, aizpildi visus laukus." }
     }
 
-    const isValidSocialSecurityNumber = /^\d{6}-\d{5}$/.test(inputData.social_security_number)
-
-    if (!isValidSocialSecurityNumber) {
-        return { ok: false, error: "Personas kodam jābūt formātā 000000-00000." }
+    const validationError = firstError(validateApplication(inputData))
+    if (validationError) {
+        return { ok: false, error: validationError }
     }
 
-    const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inputData.email)
-
-    if (!isValidEmail) {
-        return { ok: false, error: "Lūdzu, ievadi derīgu e-pasta adresi." }
+    const application: Application = {
+        id: null,
+        name: normalizeName(inputData.name),
+        social_security_number: inputData.social_security_number.trim(),
+        email: inputData.email.trim(),
+        phone_number: inputData.phone_number.trim(),
     }
 
     const supabase = await createClient()
@@ -30,7 +32,7 @@ export const apply = async (inputData?: Application): Promise<ApplyResult> => {
     const {data, error} = await supabase
     .from("users")
     .select("id")
-    .eq("social_security_number", inputData.social_security_number)
+    .eq("social_security_number", application.social_security_number)
     .maybeSingle()
 
     if (error) {
@@ -42,10 +44,10 @@ export const apply = async (inputData?: Application): Promise<ApplyResult> => {
         return { ok: false, error: "Pieteikums ar šo personas kodu jau ir iesniegts." }
     }
 
-    return saveApplication(supabase, inputData)
+    return saveApplication(supabase, application)
 }
 
-export const saveApplication = async (
+const saveApplication = async (
     supabase: SupabaseClient, application: Application
 ): Promise<ApplyResult> => {
 

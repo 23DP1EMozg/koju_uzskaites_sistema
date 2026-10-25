@@ -1,22 +1,34 @@
 "use server"
 
-import { getCurrentUser } from "../helper/auth/jwt"
+import { getCurrentUser, requireAdmin } from "../helper/auth/jwt"
+import { firstError, validateEvent } from "../helper/validation"
 import { createClient } from "../lib/supabase/server"
 import { Event } from "../types/Event"
 
-export const createEvent = async (event: Event) => {
-    const supabase = await createClient()
+// Only the editable columns, trimmed; created_by and participant_ids are never taken from the client
+const eventColumns = (event: Event) => ({
+    title: event.title?.trim(),
+    description: event.description?.trim() || null,
+    event_date: event.event_date,
+    location: event.location?.trim() || null,
+    image_url: event.image_url?.trim() || null,
+})
 
-    const user = await getCurrentUser()
+export const createEvent = async (event: Event) => {
+    const user = await requireAdmin()
 
     if (!event) throw new Error("invalid event")
+    const validationError = firstError(validateEvent(event))
+    if (validationError) throw new Error(validationError)
+
+    const supabase = await createClient()
 
     const { error } = await supabase
     .from("events")
     .insert([
         {
-            ...event,
-            created_by: user?.id,
+            ...eventColumns(event),
+            created_by: user.id,
         }
     ])
 
@@ -38,7 +50,7 @@ export const getAllEvents = async () => {
 export const getEventById = async (id: number) => {
     const supabase = await createClient()
 
-    if (!id) throw new Error("invalid id")
+    if (!Number.isInteger(id)) throw new Error("invalid id")
 
     const { data, error } = await supabase
     .from("events")
@@ -51,9 +63,10 @@ export const getEventById = async (id: number) => {
 }
 
 export const deleteEventById = async (id: number) => {
+    await requireAdmin()
     const supabase = await createClient()
 
-    if (!id) throw new Error("invalid id")
+    if (!Number.isInteger(id)) throw new Error("invalid id")
 
     const { error } = await supabase
     .from("events")
@@ -65,19 +78,18 @@ export const deleteEventById = async (id: number) => {
 
 
 export const editEventById = async (id: number, event: Event) => {
-    const supabase = await createClient()
+    const user = await requireAdmin()
 
-    const user = await getCurrentUser()
-
-    if (!id) throw new Error("invalid id")
+    if (!Number.isInteger(id)) throw new Error("invalid id")
     if (!event) throw new Error("invalid event")
-    if (!user?.id) throw new Error("unauthorized")
+    const validationError = firstError(validateEvent(event))
+    if (validationError) throw new Error(validationError)
+
+    const supabase = await createClient()
 
     const { error } = await supabase
         .from("events")
-        .update({
-            ...event,
-        })
+        .update(eventColumns(event))
         .eq("id", id)
         .eq("created_by", user.id)
     if (error) throw error
@@ -91,7 +103,7 @@ const SIGN_UP_ERROR = "Neizdevās pieteikties. Mēģini vēlreiz."
 export const signUpForEvent = async (eventId: number): Promise<SignUpResult> => {
     const user = await getCurrentUser()
     if (!user?.id) return { ok: false, error: "Lai pieteiktos, lūdzu, ienāc sistēmā." }
-    if (!eventId) return { ok: false, error: "Pasākums nav atrasts." }
+    if (!Number.isInteger(eventId)) return { ok: false, error: "Pasākums nav atrasts." }
 
     const supabase = await createClient()
 

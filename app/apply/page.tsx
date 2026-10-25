@@ -8,6 +8,7 @@ import { apply } from "./actions";
 import InputField from "../components/InputField";
 import ApplyButton from "../components/ApplyButton";
 import Toast, { ToastMessage } from "../components/Toast";
+import { ApplicationFields, FieldErrors, formatSocialSecurityNumber, hasErrors, validateApplication } from "../helper/validation";
 
 const inter = Inter({
     subsets: ["latin", "latin-ext"],
@@ -24,6 +25,7 @@ const EMPTY_APPLICATION: Application = {
 
 export default function Apply() {
     const [data, setData] = useState<Application>(EMPTY_APPLICATION)
+    const [errors, setErrors] = useState<FieldErrors<keyof ApplicationFields>>({})
     const [toast, setToast] = useState<ToastMessage | null>(null)
     const [isPending, startTransition] = useTransition()
 
@@ -32,13 +34,18 @@ export default function Apply() {
     const update = (field: keyof Omit<Application, "id">) => (e: React.ChangeEvent<HTMLInputElement>) => {
         setData(prev => ({
             ...prev,
-            [field]: e.target.value
+            [field]: field === "social_security_number" ? formatSocialSecurityNumber(e.target.value) : e.target.value
         }))
+        setErrors(prev => ({ ...prev, [field]: undefined }))
     }
 
     const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault()
         setToast(null)
+
+        const fieldErrors = validateApplication(data)
+        setErrors(fieldErrors)
+        if (hasErrors(fieldErrors)) return
 
         startTransition(async () => {
             const result = await apply(data)
@@ -68,6 +75,7 @@ export default function Apply() {
 
             <form
                 onSubmit={handleSubmit}
+                noValidate
                 className="relative z-10 flex w-full max-w-[555px] flex-col items-center"
             >
                 <h1 className="text-center text-4xl font-light leading-tight sm:text-[2.6rem]">
@@ -82,20 +90,22 @@ export default function Apply() {
                         label="Personas kods"
                         required
                         inputMode="numeric"
-                        pattern="\d{6}-\d{5}"
-                        title="Formāts: 000000-00000"
+                        maxLength={12}
                         placeholder="000000-00000"
                         value={data.social_security_number}
                         onChange={update("social_security_number")}
+                        error={errors.social_security_number}
                     />
                     <InputField
                         id="name"
                         label="Vārds Uzvārds"
                         required
                         autoComplete="name"
+                        maxLength={100}
                         placeholder="Jānis Bērziņš"
                         value={data.name}
                         onChange={update("name")}
+                        error={errors.name}
                     />
                     <InputField
                         id="phone_number"
@@ -106,6 +116,7 @@ export default function Apply() {
                         placeholder="+371 20000000"
                         value={data.phone_number}
                         onChange={update("phone_number")}
+                        error={errors.phone_number}
                     />
                     <InputField
                         id="email"
@@ -116,6 +127,7 @@ export default function Apply() {
                         placeholder="vards@epasts.lv"
                         value={data.email}
                         onChange={update("email")}
+                        error={errors.email}
                     />
                 </div>
 

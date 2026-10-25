@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useEffect, useState } from "react"
+import { FormEvent, useCallback, useEffect, useState } from "react"
 import Image from "next/image"
 import { Inter } from "next/font/google"
 import Modal from "react-modal"
@@ -17,6 +17,8 @@ import StatCard from "./StatCard"
 import AdminModal from "./AdminModal"
 import ConfirmDialog from "./ConfirmDialog"
 import InputField from "../components/InputField"
+import Toast, { ToastMessage } from "../components/Toast"
+import { FieldErrors, TenantFields, formatSocialSecurityNumber, hasErrors, validateTenant } from "../helper/validation"
 import { Complaint } from "../types/Complaint"
 import { OverdueTenant } from "../types/OverdueTenant"
 import { WeekendStay } from "../types/WeekendStay"
@@ -69,6 +71,10 @@ export default function AdminDashboard() {
     const [tenantSearch, setTenantSearch] = useState("")
     const [activeSection, setActiveSection] = useState(NAV_ITEMS[0].id)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [editErrors, setEditErrors] = useState<FieldErrors<keyof TenantFields>>({})
+    // Shown inside the modal, since a toast would sit behind its overlay
+    const [editError, setEditError] = useState<string | null>(null)
+    const [toast, setToast] = useState<ToastMessage | null>(null)
     const [pendingConfirm, setPendingConfirm] = useState<PendingConfirm | null>(null)
     const [isConfirming, setIsConfirming] = useState(false)
     const [complaints, setComplaints] = useState<Complaint[]>([])
@@ -124,7 +130,20 @@ export default function AdminDashboard() {
     function closeApplicationModal() {
         setIsApplicationModalOpen(false)
         setApplicationEditData(EMPTY_EDIT_DATA)
+        setEditErrors({})
+        setEditError(null)
     }
+
+    const closeToast = useCallback(() => setToast(null), [])
+
+    const editFields = (u: User): TenantFields => ({
+        name: u.name ?? "",
+        social_security_number: u.social_security_number ?? "",
+        course: u.course ?? "",
+        room_number: u.room_number,
+        phone_number: u.phone_number ?? "",
+        email: u.email ?? "",
+    })
 
     function handleAccept(application: Application) {
         setApplicationEditData({
@@ -140,14 +159,27 @@ export default function AdminDashboard() {
 
     async function handleSubmitAccept(e: FormEvent<HTMLFormElement>) {
         e.preventDefault()
+        setToast(null)
+        setEditError(null)
+
+        const fieldErrors = validateTenant(editFields(applicationEditData))
+        setEditErrors(fieldErrors)
+        if (hasErrors(fieldErrors)) return
+
         setIsSubmitting(true)
         try {
-            await acceptAndEditApplication(applicationEditData)
+            const result = await acceptAndEditApplication(applicationEditData)
+            if (!result.ok) {
+                setEditError(result.error)
+                return
+            }
             closeApplicationModal()
+            setToast({ id: Date.now(), text: "Pieteikums apstiprināts. Piekļuves dati nosūtīti e-pastā.", variant: "success" })
             getApplications()
             getTenants()
         } catch (error) {
             console.error(error)
+            setEditError("Radās neparedzēta kļūda. Mēģini vēlreiz.")
         } finally {
             setIsSubmitting(false)
         }
@@ -213,10 +245,15 @@ export default function AdminDashboard() {
     }
 
     const updateEditField = (field: keyof User) => (e: React.ChangeEvent<HTMLInputElement>) => {
+        // Room keeps only digits, the personal code gets its dash, the course is always in capitals
+        const digits = e.target.value.replace(/\D/g, "")
         const value = field === "room_number"
-            ? (e.target.value === "" ? undefined : parseInt(e.target.value))
+            ? (digits === "" ? undefined : parseInt(digits))
+            : field === "course" ? e.target.value.toUpperCase()
+            : field === "social_security_number" ? formatSocialSecurityNumber(e.target.value)
             : e.target.value
         setApplicationEditData(prev => ({ ...prev, [field]: value }))
+        setEditErrors(prev => ({ ...prev, [field]: undefined }))
     }
 
     const search = tenantSearch.trim().toLowerCase()
@@ -237,6 +274,8 @@ export default function AdminDashboard() {
 
     return (
         <div className={`${inter.className} min-h-dvh bg-white`}>
+            <Toast toast={toast} onClose={closeToast} />
+
             {/* Hero */}
             <header className="relative flex min-h-dvh flex-col overflow-hidden bg-[#2a0b09] px-4 pt-6 pb-24 text-white lg:px-[3.25rem] lg:pt-8 lg:pb-40">
                 <Image
@@ -433,15 +472,17 @@ export default function AdminDashboard() {
 
             {/* Accept & edit application */}
             <AdminModal isOpen={isApplicationModalOpen} onClose={closeApplicationModal} title="Apstiprināt pieteikumu">
-                <form onSubmit={handleSubmitAccept} className="flex flex-col gap-4">
-                    <InputField id="edit_name" label="Vārds Uzvārds" required value={applicationEditData.name ?? ""} onChange={updateEditField("name")} />
-                    <InputField id="edit_ssn" label="Personas kods" required value={applicationEditData.social_security_number ?? ""} onChange={updateEditField("social_security_number")} />
+                <form onSubmit={handleSubmitAccept} noValidate className="flex flex-col gap-4">
+                    <InputField id="edit_name" label="Vārds Uzvārds" required maxLength={100} value={applicationEditData.name ?? ""} onChange={updateEditField("name")} error={editErrors.name} />
+                    <InputField id="edit_ssn" label="Personas kods" required inputMode="numeric" maxLength={12} placeholder="000000-00000" value={applicationEditData.social_security_number ?? ""} onChange={updateEditField("social_security_number")} error={editErrors.social_security_number} />
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <InputField id="edit_course" label="Kurss" required placeholder="DP2-1" value={applicationEditData.course ?? ""} onChange={updateEditField("course")} />
-                        <InputField id="edit_room" label="Istaba" type="number" required placeholder="101" value={applicationEditData.room_number ?? ""} onChange={updateEditField("room_number")} />
+                        <InputField id="edit_course" label="Kurss" required maxLength={10} placeholder="DP4-1" value={applicationEditData.course ?? ""} onChange={updateEditField("course")} error={editErrors.course} />
+                        <InputField id="edit_room" label="Istaba" required inputMode="numeric" maxLength={3} placeholder="101" value={applicationEditData.room_number ?? ""} onChange={updateEditField("room_number")} error={editErrors.room_number} />
                     </div>
-                    <InputField id="edit_phone" label="Tel. numurs" type="tel" value={applicationEditData.phone_number ?? ""} onChange={updateEditField("phone_number")} />
-                    <InputField id="edit_email" label="E-pasts" type="email" required value={applicationEditData.email ?? ""} onChange={updateEditField("email")} />
+                    <InputField id="edit_phone" label="Tel. numurs" type="tel" required placeholder="+371 20000000" value={applicationEditData.phone_number ?? ""} onChange={updateEditField("phone_number")} error={editErrors.phone_number} />
+                    <InputField id="edit_email" label="E-pasts" type="email" required value={applicationEditData.email ?? ""} onChange={updateEditField("email")} error={editErrors.email} />
+
+                    {editError && <p role="alert" className="text-sm text-[#ffb4ab]">{editError}</p>}
 
                     <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
                         <button type="button" onClick={closeApplicationModal} className="cursor-pointer rounded-full border border-white/80 py-4 text-lg transition hover:bg-white/10">

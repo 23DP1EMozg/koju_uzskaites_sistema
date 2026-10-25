@@ -11,6 +11,7 @@ import { Notification } from "../types/Notification"
 import { OverdueTenant } from "../types/OverdueTenant"
 import { WeekendStay, WeekendStayStatus } from "../types/WeekendStay"
 import { countMonthStays, syncStayCount } from "../stay/stayCount"
+import { firstError, normalizeCourse, normalizeName, validateTenant } from "../helper/validation"
 
 export const getUserApplications = async () : Promise<Application[]> => {
     await requireAdmin()
@@ -32,8 +33,24 @@ export const getUserApplications = async () : Promise<Application[]> => {
 }
 
 
-export const acceptAndEditApplication = async (u: User) => {
+export type AcceptApplicationResult =
+    | { ok: true }
+    | { ok: false, error: string }
+
+export const acceptAndEditApplication = async (u: User): Promise<AcceptApplicationResult> => {
     await requireAdmin()
+
+    const fields = {
+        name: u.name ?? "",
+        social_security_number: u.social_security_number ?? "",
+        course: u.course ?? "",
+        room_number: u.room_number,
+        phone_number: u.phone_number ?? "",
+        email: u.email ?? "",
+    }
+    if (!Number.isInteger(u.id)) return { ok: false, error: "Pieteikums nav atrasts." }
+    const validationError = firstError(validateTenant(fields))
+    if (validationError) return { ok: false, error: validationError }
 
     const supabase = await createClient()
 
@@ -41,10 +58,16 @@ export const acceptAndEditApplication = async (u: User) => {
     const hashedPassword = await hashPassword(generatedPassword.toString())
 
 
-    const { error } = await supabase
+    const { data: accepted, error } = await supabase
     .from("users")
     .update({
-        ...u,
+        // Only the edited fields are copied, so the client can't set the role or other columns
+        name: normalizeName(fields.name),
+        social_security_number: fields.social_security_number.trim(),
+        course: normalizeCourse(fields.course),
+        room_number: Number(fields.room_number),
+        phone_number: fields.phone_number.trim(),
+        email: fields.email.trim(),
         password: hashedPassword,
         role: JSON.stringify(Role.USER),
         last_laundry_date: new Date().toISOString(),
@@ -52,20 +75,27 @@ export const acceptAndEditApplication = async (u: User) => {
         weekend_stay_count: 0,
     })
     .eq("id", u.id)
+    // Only an application (no password yet) can be accepted, never an existing account
+    .is("password", null)
+    .select("id")
 
     if (error) {
-        throw error
+        console.error(error)
+        // 23505: unique violation, e.g. another user already has this personal code
+        return { ok: false, error: error.code === "23505" ? "Lietotājs ar šiem datiem jau eksistē." : "Neizdevās saglabāt pieteikumu. Mēģini vēlreiz." }
     }
+    // Already accepted or deleted: don't email a password that wasn't saved
+    if (accepted.length === 0) return { ok: false, error: "Pieteikums vairs nav pieejams. Pārlādē lapu." }
 
     const result = await sendEmail({
-        to: u.email as string,
+        to: fields.email.trim(),
         subject: "Pieņemšana dienesta viesnīcā",
         message: `
         Sveiki!
 
         jūs esat pieņemts RVT kojās. jūsu piekļuves dati ir:
         
-        personas kods: ${u.social_security_number}
+        personas kods: ${fields.social_security_number.trim()}
         pagaidu parole: ${generatedPassword}
         `
     })
@@ -73,16 +103,21 @@ export const acceptAndEditApplication = async (u: User) => {
     if (!result.success) {
         console.error(result.error)
     }
+
+    return { ok: true }
 }
 
 export const rejectApplication = async (id: number) => {
     await requireAdmin()
+    if (!Number.isInteger(id)) throw new Error("invalid id")
     const supabase = await createClient()
 
     const { error } = await supabase
     .from("users")
     .delete()
     .eq("id", id)
+    // Rejecting only removes applications, never an approved account
+    .is("password", null)
 
     if (error) {
         throw error
@@ -107,6 +142,7 @@ export const getAllTenants = async () => {
 
 export const deleteTenant = async (id: number) => {
     await requireAdmin()
+    if (!Number.isInteger(id)) throw new Error("invalid id")
     const supabase = await createClient()
 
     const { error } = await supabase
@@ -150,21 +186,23 @@ export const getAllComplaints = async () : Promise<Complaint[]> => {
     return data
 }
 
+const MAX_NOTIFICATION_LENGTH = 1000
+
 export const createNotification = async ({user_id, message, category} : Notification, all?:boolean) => {
     await requireAdmin()
     const supabase = await createClient()
 
-    if (!user_id) throw new Error("invalid user id")
-    if (!message) throw new Error("invalid message")
-    if (!category) throw new Error("invalid category")
+    if (!Number.isInteger(user_id)) throw new Error("invalid user id")
+    if (typeof message !== "string" || !message.trim() || message.length > MAX_NOTIFICATION_LENGTH) throw new Error("invalid message")
+    if (typeof category !== "string" || !category.trim() || category.length > 50) throw new Error("invalid category")
     
     const { error } = await supabase
     .from("reminders")
     .insert([
         {
             user_id: all ? -1 : user_id,
-            message,
-            category,
+            message: message.trim(),
+            category: category.trim(),
             read_by: []
         }
     ])
@@ -211,6 +249,7 @@ export const getOverdueLaundryTenants = async () : Promise<OverdueTenant[]> => {
 
 export const notifyOverdueTenant = async (id: number) => {
     await requireAdmin()
+    if (!Number.isInteger(id)) throw new Error("invalid id")
     await createNotification({ user_id: id, message: "Jums ir jānodod veļa", category: LAUNDRY_REMINDER_CATEGORY })
 }
 
@@ -240,6 +279,8 @@ export const getWeekendStays = async () : Promise<(WeekendStay & { month_stay_co
 
 export const setWeekendStayStatus = async (id: number, status: Exclude<WeekendStayStatus, "pending">) => {
     await requireAdmin()
+    if (!Number.isInteger(id)) throw new Error("invalid id")
+    if (status !== "approved" && status !== "rejected") throw new Error("invalid status")
     const supabase = await createClient()
 
     // Only pending requests can be decided, so the stay count is never bumped twice

@@ -4,7 +4,7 @@ import { getCurrentUser } from "../helper/auth/jwt"
 import { hashPassword, verifyPassword } from "../helper/auth/password"
 import { createClient } from "../lib/supabase/server"
 import { stopPasswordReminders } from "../notifications/passwordReminder"
-import { MIN_PASSWORD_LENGTH } from "./passwordRules"
+import { firstError, validatePasswordChange } from "../helper/validation"
 
 export type ChangePasswordResult =
     | { ok: true }
@@ -16,17 +16,9 @@ export const changePassword = async (currentPassword: string, newPassword: strin
     const user = await getCurrentUser()
     if (!user) return { ok: false, error: "Sesija ir beigusies. Ienāc vēlreiz." }
 
-    if (!currentPassword || !newPassword || !confirmPassword) {
-        return { ok: false, error: "Aizpildi visus laukus." }
-    }
-    if (newPassword.length < MIN_PASSWORD_LENGTH) {
-        return { ok: false, error: `Jaunajai parolei jābūt vismaz ${MIN_PASSWORD_LENGTH} simbolus garai.` }
-    }
-    if (newPassword !== confirmPassword) {
-        return { ok: false, error: "Jaunās paroles nesakrīt." }
-    }
-    if (newPassword === currentPassword) {
-        return { ok: false, error: "Jaunajai parolei jāatšķiras no pašreizējās." }
+    const validationError = firstError(validatePasswordChange({ current: currentPassword, next: newPassword, confirm: confirmPassword }))
+    if (validationError) {
+        return { ok: false, error: validationError }
     }
 
     try {

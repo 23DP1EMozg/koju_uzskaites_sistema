@@ -3,21 +3,15 @@
 import { revalidatePath } from "next/cache"
 import { getCurrentUser } from "../helper/auth/jwt"
 import { createClient } from "../lib/supabase/server"
-import { AUTO_APPROVE_MONTHLY_LIMIT, WEEKEND_STAY_REASONS, WeekendStayReason, getUpcomingWeekend, weekendRange } from "../types/WeekendStay"
+import { AUTO_APPROVE_MONTHLY_LIMIT, WeekendStayReason, getUpcomingWeekend } from "../types/WeekendStay"
+import { WeekendStayFields, firstError, validateWeekendStay } from "../helper/validation"
 import { countMonthStays, syncStayCount } from "./stayCount"
 
-export type WeekendStayInput = {
-    weekendDate: string,
-    reason: string,
-    eventDate: string,
-    reasonText: string,
-}
+export type WeekendStayInput = WeekendStayFields
 
 export type CreateWeekendStayResult =
     | { ok: true, approved: boolean }
     | { ok: false, error: string }
-
-const MAX_REASON_LENGTH = 500
 
 // Returns a result instead of throwing: errors thrown from server actions are hidden in production
 export const createWeekendStay = async ({ weekendDate, reason, eventDate, reasonText }: WeekendStayInput): Promise<CreateWeekendStayResult> => {
@@ -28,22 +22,13 @@ export const createWeekendStay = async ({ weekendDate, reason, eventDate, reason
     if (weekendDate !== getUpcomingWeekend()) {
         return { ok: false, error: "Palikšanu var pieteikt tikai tuvākajai nedēļas nogalei. Pārlādē lapu." }
     }
-    if (!(reason in WEEKEND_STAY_REASONS)) {
-        return { ok: false, error: "Izvēlies palikšanas iemeslu." }
+
+    const validationError = firstError(validateWeekendStay({ weekendDate, reason, eventDate, reasonText }))
+    if (validationError) {
+        return { ok: false, error: validationError }
     }
 
-    const { from, to } = weekendRange(weekendDate)
-    if (reason === "event" && (!eventDate || eventDate < from || eventDate > to)) {
-        return { ok: false, error: "Norādi pasākuma datumu šajā nedēļas nogalē." }
-    }
-
-    const text = reasonText.trim()
-    if (reason === "other" && !text) {
-        return { ok: false, error: "Apraksti palikšanas iemeslu." }
-    }
-    if (text.length > MAX_REASON_LENGTH) {
-        return { ok: false, error: `Iemesls nedrīkst būt garāks par ${MAX_REASON_LENGTH} simboliem.` }
-    }
+    const text = typeof reasonText === "string" ? reasonText.trim() : ""
 
     try {
         const supabase = await createClient()

@@ -1,6 +1,10 @@
-'use server';
-
+// Not a 'use server' module on purpose: a server action would let anyone send email through
+// our SMTP account. Only server code (the admin actions) may call it.
 import nodemailer from 'nodemailer';
+
+// The message can hold user input (names, emails), so it's escaped before going into the HTML part
+const escapeHtml = (text: string) =>
+  text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 
 type SendEmailProps = {
   to: string;        // Recipient's email address
@@ -26,7 +30,7 @@ export async function sendEmail({ to, subject, message }: SendEmailProps) {
       subject: subject,
       text: message,
       html: `<div style="font-family: sans-serif; padding: 20px;">
-              <p>${message}</p>
+              <p>${escapeHtml(message).replace(/\n/g, '<br>')}</p>
              </div>`,
     });
 
