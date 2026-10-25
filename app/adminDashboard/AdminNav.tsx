@@ -27,7 +27,7 @@ function scrollToSection(e: MouseEvent<HTMLAnchorElement>, id: string) {
 
 export default function AdminNav({ items, activeId, hasNotifications }: Props) {
     return (
-        <nav className="flex items-center justify-between gap-4">
+        <nav className="fixed inset-x-4 top-6 z-50 flex items-center justify-between gap-4 lg:inset-x-[3.25rem] lg:top-8">
             <div className="flex shrink-0 items-center gap-2">
                 <form action={logoutUser}>
                     <button
@@ -56,7 +56,7 @@ export default function AdminNav({ items, activeId, hasNotifications }: Props) {
             </div>
 
             {/* A scrollable bar at the bottom of the screen on phones, inline on wider screens */}
-            <ul className="fixed inset-x-4 bottom-4 z-40 flex items-center overflow-x-auto rounded-full bg-white p-1.5 shadow-[0_4px_14px_rgba(0,0,0,0.25)] [scrollbar-width:none] md:static md:z-auto md:flex-1 md:overflow-visible md:p-2.5 md:shadow-none lg:max-w-[1200px]">
+            <ul className="fixed inset-x-4 bottom-4 z-40 flex items-center overflow-x-auto rounded-full bg-white p-1.5 shadow-[0_4px_14px_rgba(0,0,0,0.25)] [scrollbar-width:none] md:static md:z-auto md:flex-1 md:overflow-visible md:p-2.5 lg:max-w-[1200px]">
                 {items.map(item => (
                     <li key={item.id} className="shrink-0 md:flex-1">
                         <a

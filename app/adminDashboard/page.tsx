@@ -279,6 +279,12 @@ export default function AdminDashboard() {
         <div className={`${inter.className} min-h-dvh bg-white`}>
             <Toast toast={toast} onClose={closeToast} />
 
+            <AdminNav
+                items={NAV_ITEMS}
+                activeId={activeSection}
+                hasNotifications={applications.length > 0}
+            />
+
             {/* Hero */}
             <header className="relative flex min-h-dvh flex-col overflow-hidden bg-[#2a0b09] px-4 pt-6 pb-24 text-white lg:px-[3.25rem] lg:pt-8 lg:pb-40">
                 <Image
@@ -290,13 +296,8 @@ export default function AdminDashboard() {
                     className="scale-105 object-cover"
                 />
 
-                <div className="relative z-10">
-                    <AdminNav
-                        items={NAV_ITEMS}
-                        activeId={activeSection}
-                        hasNotifications={applications.length > 0}
-                    />
-                </div>
+                {/* Holds the space of the fixed nav */}
+                <div className="h-12 shrink-0 lg:h-[4.9rem]" />
 
                 <div className="relative z-10 mt-auto flex flex-col gap-10 pt-16 lg:flex-row lg:items-end lg:justify-between">
                     <div className="lg:pb-2">
@@ -316,7 +317,7 @@ export default function AdminDashboard() {
             {/* Applications */}
             <section
                 id="pieteikumi"
-                className="relative z-10 -mt-12 scroll-mt-4 rounded-[3rem] bg-black px-4 py-14 text-white lg:-mt-16 lg:px-[7.5rem] lg:py-28"
+                className="relative z-10 -mt-12 scroll-mt-24 lg:scroll-mt-32 rounded-[3rem] bg-black px-4 py-14 text-white lg:-mt-16 lg:px-[7.5rem] lg:py-28"
             >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <h2 className="text-5xl font-extrabold italic tracking-tight lg:text-[5.5rem] lg:leading-none">Pieteikumi</h2>
@@ -343,7 +344,7 @@ export default function AdminDashboard() {
             </section>
 
             {/* Tenants */}
-            <section id="iemitnieki" className="scroll-mt-4 px-4 py-16 lg:px-[7.5rem] lg:py-28">
+            <section id="iemitnieki" className="scroll-mt-24 lg:scroll-mt-32 px-4 py-16 lg:px-[7.5rem] lg:py-28">
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                     <h2 className="bg-gradient-to-b from-black from-30% to-[#a23a32] bg-clip-text pr-4 text-6xl font-extrabold italic leading-tight tracking-tight text-transparent lg:text-[8.5rem] lg:leading-none">
                         Iemītnieki
@@ -378,7 +379,7 @@ export default function AdminDashboard() {
             </section>
 
             {/* Overdue cleaning — tenants who skipped laundry or kitchen cleaning for over 3 weeks */}
-            <section id="kavetaji" className="scroll-mt-4 px-4 pb-16 lg:px-[7.5rem] lg:pb-28">
+            <section id="kavetaji" className="scroll-mt-24 lg:scroll-mt-32 px-4 pb-16 lg:px-[7.5rem] lg:pb-28">
                 <div className="rounded-[3rem] bg-[url('/backgrounds/redTheme/NotificationContainerRedBg.png')] bg-cover bg-center px-3 py-14 text-white lg:px-16 lg:py-20">
                     <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                         <h2 className="text-5xl font-extrabold italic tracking-tight lg:text-[5.5rem] lg:leading-none">Kavētāji</h2>
@@ -404,7 +405,7 @@ export default function AdminDashboard() {
             </section>
 
             {/* Weekend stay requests */}
-            <section id="paliksana" className="scroll-mt-4 px-4 pb-16 lg:px-[7.5rem] lg:pb-28">
+            <section id="paliksana" className="scroll-mt-24 lg:scroll-mt-32 px-4 pb-16 lg:px-[7.5rem] lg:pb-28">
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                     <h2 className="bg-gradient-to-b from-black from-30% to-[#a23a32] bg-clip-text pr-4 text-6xl font-extrabold italic leading-tight tracking-tight text-transparent lg:text-[8.5rem] lg:leading-none">
                         Palikšana
@@ -437,7 +438,7 @@ export default function AdminDashboard() {
             {/* Complaints submitted by tenants */}
             <section
                 id="sudzibas"
-                className="scroll-mt-4 rounded-[3rem] bg-black px-4 py-14 text-white lg:px-[7.5rem] lg:py-28"
+                className="scroll-mt-24 lg:scroll-mt-32 rounded-[3rem] bg-black px-4 py-14 text-white lg:px-[7.5rem] lg:py-28"
             >
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <h2 className="text-5xl font-extrabold italic tracking-tight lg:text-[5.5rem] lg:leading-none">Sūdzības</h2>

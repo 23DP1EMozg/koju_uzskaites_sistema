@@ -34,7 +34,7 @@ export default function InfoSection({ showToast }: Props) {
     }
 
     return (
-        <section id="informacija" className="scroll-mt-4 px-4 py-16 lg:px-[7.5rem] lg:py-28">
+        <section id="informacija" className="scroll-mt-24 lg:scroll-mt-32 px-4 py-16 lg:px-[7.5rem] lg:py-28">
             <div className="rounded-[3rem] bg-[url('/backgrounds/redTheme/NotificationContainerRedBg.png')] bg-cover bg-center px-4 py-14 text-white lg:px-16 lg:py-20">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                     <h2 className="text-5xl font-extrabold italic tracking-tight lg:text-[5.5rem] lg:leading-none">Informācija</h2>

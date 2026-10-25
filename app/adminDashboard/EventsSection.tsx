@@ -83,7 +83,7 @@ export default function EventsSection({ showToast, requestConfirm }: Props) {
     }
 
     return (
-        <section id="pasakumi" className="scroll-mt-4 rounded-[3rem] bg-black px-4 py-14 text-white lg:px-[7.5rem] lg:py-28">
+        <section id="pasakumi" className="scroll-mt-24 lg:scroll-mt-32 rounded-[3rem] bg-black px-4 py-14 text-white lg:px-[7.5rem] lg:py-28">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
                 <h2 className="text-5xl font-extrabold italic tracking-tight lg:text-[5.5rem] lg:leading-none">Pasākumi</h2>
                 <p className="max-w-[26rem] text-lg text-white/75 lg:mr-44 lg:mb-[-1.5rem] lg:text-2xl">

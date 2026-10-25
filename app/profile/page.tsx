@@ -45,7 +45,7 @@ export default async function Profile() {
             style={{ backgroundImage: `url('${theme.homeBg}')` }}
             className={`${inter.className} relative flex min-h-dvh w-full flex-col items-center bg-cover bg-center bg-no-repeat pt-4 pb-10 md:pt-5 md:pb-16`}
         >
-            <nav className="flex h-12 w-[calc(100%-32px)] items-center gap-2 md:h-17 md:w-[95%]">
+            <nav className="sticky top-4 z-50 flex h-12 w-[calc(100%-32px)] items-center gap-2 md:top-5 md:h-17 md:w-[95%]">
                 <Link
                     href="/"
                     aria-label="Sākumlapa"
